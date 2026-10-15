@@ -71,6 +71,7 @@ modules that run as-is.
 ```bash
 node --test tests/           # unit + (optionally live) recipe tests
 node scripts/e2e.js          # REAL end-to-end run in headless Firefox
+node scripts/screenshots.js  # AMO listing screenshots -> screenshots/ (1280x800)
 node scripts/package.js      # zip the extension into web-ext-artifacts/
 node scripts/package.js --beta   # zip a beta-channel build (separate add-on id)
 node scripts/build-data.js   # optional: refresh src/data.js from matprat.no
