@@ -49,6 +49,12 @@ if (!beta) {
 } else {
   const BETA_ID = process.env.BETA_ADDON_ID ?? "gramguru-beta@anderss";
   const BETA_VERSION = process.env.BETA_VERSION ?? "0.1.3";
+  // Self-distributed add-ons only auto-update via an HTTPS update manifest.
+  // Firefox keeps using the update_url of the installed version, so it must be
+  // present from the very first beta build.
+  const BETA_UPDATE_URL =
+    process.env.BETA_UPDATE_URL ??
+    "https://raw.githubusercontent.com/Anders-Steen/gramguru/main/updates.json";
   const staging = mkdtempSync(join(tmpdir(), "gramguru-beta-"));
   try {
     for (const file of runtimeFiles) {
@@ -56,8 +62,11 @@ if (!beta) {
       cpSync(join(root, file), join(staging, file), { recursive: true });
     }
 
-    const gecko = { ...manifest.browser_specific_settings.gecko, id: BETA_ID };
-    if (process.env.BETA_UPDATE_URL) gecko.update_url = process.env.BETA_UPDATE_URL;
+    const gecko = {
+      ...manifest.browser_specific_settings.gecko,
+      id: BETA_ID,
+      update_url: BETA_UPDATE_URL,
+    };
 
     const betaManifest = {
       ...manifest,

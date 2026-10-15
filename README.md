@@ -72,6 +72,14 @@ The beta build is the same code with a different manifest id (`gramguru-beta@and
 and version, so it registers as its own (unlisted, self-distributed) add-on — no
 review wait. Override with `BETA_ADDON_ID`, `BETA_VERSION`, `BETA_UPDATE_URL`.
 
+Because self-distributed add-ons don't auto-update through AMO, beta builds set
+`browser_specific_settings.gecko.update_url` to the HTTPS `updates.json` in this
+repo. Publishing an unlisted version (`scripts/publish.js --channel unlisted`)
+downloads the signed XPI and records its `version` + `update_link` in
+`updates.json`; commit and push that file to deliver the update. Firefox keeps
+using the `update_url` baked into the installed version, so it must be present
+from the first install.
+
 `node --test` fetches the real recipe pages and asserts the conversions. Offline?
 It falls back to cached fixtures in `tests/fixtures/`. Refresh fixtures with
 `GRAMGURU_UPDATE_FIXTURES=1 node --test tests/`.

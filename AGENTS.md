@@ -90,6 +90,14 @@ See README "Publish to addons.mozilla.org". `scripts/publish.js` reads
 `AMO_API_KEY`, `AMO_API_SECRET`, `AMO_ADDON_ID` (run with `node --env-file=.env`).
 It creates the listing if it doesn't exist yet, otherwise adds a version.
 
+Beta channel (unlisted/self-distributed): built with `node scripts/package.js --beta`
+(id `gramguru-beta@anderss`, `update_url` → `updates.json`). Publishing unlisted
+(`--channel unlisted`, `AMO_ADDON_ID=gramguru-beta@anderss`) downloads the signed
+XPI and appends `{version, update_link}` to `updates.json` via `recordUpdate()`.
+Commit + push `updates.json` so installed betas pick up the update. Firefox only
+ever reads the `update_url` from the installed version, so it must ship in the
+first build.
+
 ## When something is ambiguous
 
 Convert to grams. When in doubt, shrug. 🤷

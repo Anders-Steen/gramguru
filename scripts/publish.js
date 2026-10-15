@@ -127,6 +127,25 @@ async function downloadSigned(url) {
     writeFileSync(out, Buffer.from(await res.arrayBuffer()));
     console.log(`signed add-on -> ${out}`);
 }
+// Self-distributed (unlisted) add-ons update via an HTTPS update manifest.
+// Record the freshly signed version so existing installs can find it.
+const UPDATES_MANIFEST = join(root, "updates.json");
+function recordUpdate(addonId, version, updateLink) {
+    let doc = { addons: {} };
+    try {
+        doc = JSON.parse(readFileSync(UPDATES_MANIFEST, "utf8"));
+    }
+    catch {
+        /* start fresh */
+    }
+    doc.addons ??= {};
+    const entry = (doc.addons[addonId] ??= { updates: [] });
+    entry.updates = (entry.updates ?? []).filter((u) => u.version !== version);
+    entry.updates.push({ version, update_link: updateLink });
+    entry.updates.sort((a, b) => a.version.localeCompare(b.version, undefined, { numeric: true }));
+    writeFileSync(UPDATES_MANIFEST, JSON.stringify(doc, null, 2) + "\n");
+    console.log(`recorded ${version} in updates.json — commit & push to deliver the update`);
+}
 async function main() {
     const key = process.env.AMO_API_KEY;
     const secret = process.env.AMO_API_SECRET;
@@ -157,6 +176,7 @@ async function main() {
     }
     else if (version.file?.url) {
         await downloadSigned(version.file.url);
+        recordUpdate(addonId, version.version ?? MANIFEST.version, version.file.url);
     }
 }
 main().catch((err) => {
