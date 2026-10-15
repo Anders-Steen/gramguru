@@ -5,7 +5,14 @@
   "private": true,
   "type": "module",
   "license": "MIT",
-  "keywords": ["firefox", "webextension", "metric", "grams", "recipes", "norwegian"],
+  "keywords": [
+    "firefox",
+    "webextension",
+    "metric",
+    "grams",
+    "recipes",
+    "norwegian"
+  ],
   "scripts": {
     "test": "node --test tests/",
     "e2e": "node scripts/e2e.js",

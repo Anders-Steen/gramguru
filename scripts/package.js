@@ -10,14 +10,7 @@
 // Beta overrides (env): BETA_ADDON_ID, BETA_VERSION, BETA_UPDATE_URL.
 
 import { execFileSync } from "node:child_process";
-import {
-  cpSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
@@ -74,10 +67,7 @@ if (!beta) {
       version: BETA_VERSION,
       browser_specific_settings: { ...manifest.browser_specific_settings, gecko },
     };
-    writeFileSync(
-      join(staging, "manifest.json"),
-      JSON.stringify(betaManifest, null, 2) + "\n",
-    );
+    writeFileSync(join(staging, "manifest.json"), JSON.stringify(betaManifest, null, 2) + "\n");
 
     const zipPath = join(outDir, `gramguru-beta-${BETA_VERSION}.zip`);
     rmSync(zipPath, { force: true });

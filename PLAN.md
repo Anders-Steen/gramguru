@@ -21,11 +21,11 @@ in grams (auto-scaled to mg/g/kg), with a cheeky metric-vs-imperial tone.
   `https://www.matprat.no/api/IngredientMeasurement/GetAllIngredients`
   (needs `Referer: https://www.matprat.no/`) → 1726 ingredients with gram
   weights for `liter, deciliter, centiliter, milliliter, cup, uscup, teaspoon,
-  tablespoon, piece, ounce, pound`.
+tablespoon, piece, ounce, pound`.
   matvaretabellen.no is the noted **future** fallback:
   `https://www.matvaretabellen.no/api/nb/foods.json` (2121 foods; messy portions).
 - **Imperial:** detected and converted too (`oz, lb, fl oz, cup, tbsp, tsp,
-  gallon, pint, quart, stick`), with a jab.
+gallon, pint, quart, stick`), with a jab.
 - **Unknown ingredient:** assume water density, mark `≈` **and 🤷** `(approx)`.
 - **Output:** grams only. Never ml. Ever.
 - **Language:** English (README/UI/code).

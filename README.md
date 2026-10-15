@@ -2,7 +2,7 @@
 
 > **⚠️ VIBE-CODED ⚠️**
 > This extension was written largely by an AI, late, while its human watched a
-> movie and muttered "ss… but how many *grams*?" Treat it like a friendly
+> movie and muttered "ss… but how many _grams_?" Treat it like a friendly
 > labradoodle: delightful, mostly harmless, occasionally eats your slippers.
 > Review before you trust it with your grandmother's kjøttkaker. 🍖
 
@@ -16,11 +16,11 @@ It also drags imperial units, kicking and screaming, into the metric age:
 ## Why grams? 📏
 
 Because the metric system is what happens when a civilization sits down and
-says *"let's use powers of ten."* Meanwhile a "cup" of flour is 120 g, a "cup"
+says _"let's use powers of ten."_ Meanwhile a "cup" of flour is 120 g, a "cup"
 of water is 236 g, and a "cup" of your sanity is gone. 🫠
 
 So: everything becomes grams. Kilograms when it's a lot. Milligrams when it's
-homeopathy. Never ounces. Never ever cups. (We convert *from* them, out of
+homeopathy. Never ounces. Never ever cups. (We convert _from_ them, out of
 pity. 🇺🇸)
 
 ## What it actually does
@@ -39,23 +39,23 @@ pity. 🇺🇸)
 - 🤷 **Unknown ingredient?** It never invents a single number: it shows **both**
   estimates inline — `30/18 g wet/dry 🤷` — and the tooltip spells them out on two
   lines (`30 g if wet` / `18 g if dry`). Values ≥ 20 drop decimals. (Unknown
-  *count* units keep the original.)
+  _count_ units keep the original.)
 - 🔢 Shows a count badge on the toolbar icon.
 - 🔌 **Zero network calls.** The density tables are bundled. Your recipes stay
   yours. 🕵️
 
 ## Example output
 
-| On the page | GramGuru |
-| --- | --- |
-| `3 ss hvetemel` | `27 g` |
-| `1,5 dl melk` | `150 g` |
-| `0,5 ts pepper` | `1.3 g` |
-| `3 stk gulrøtter` | `270 g` |
-| `1 cup cheddar` | `100 g` |
-| `2 ss` (unknown) | `30/18 g wet/dry` 🤷 — tooltip: `30 g if wet` / `18 g if dry` |
-| `3 stk` (unknown piece) | `3 stk` 🤷 — tooltip: `ingredient not recognised` |
-| `8 oz smør` | `226.8 g (exact) 🔪 death to imperialism` |
+| On the page             | GramGuru                                                      |
+| ----------------------- | ------------------------------------------------------------- |
+| `3 ss hvetemel`         | `27 g`                                                        |
+| `1,5 dl melk`           | `150 g`                                                       |
+| `0,5 ts pepper`         | `1.3 g`                                                       |
+| `3 stk gulrøtter`       | `270 g`                                                       |
+| `1 cup cheddar`         | `100 g`                                                       |
+| `2 ss` (unknown)        | `30/18 g wet/dry` 🤷 — tooltip: `30 g if wet` / `18 g if dry` |
+| `3 stk` (unknown piece) | `3 stk` 🤷 — tooltip: `ingredient not recognised`             |
+| `8 oz smør`             | `226.8 g (exact) 🔪 death to imperialism`                     |
 
 ## Install (development)
 

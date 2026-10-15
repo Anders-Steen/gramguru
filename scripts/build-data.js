@@ -57,7 +57,9 @@ async function main() {
   const banner = [
     "// Ingredient density table: grams per unit, per ingredient.",
     "// Data source: https://www.matprat.no/api/IngredientMeasurement/GetAllIngredients",
-    `// Refreshed: ${new Date().toISOString()} — ${ingredients.length} ingredients, ${keptUnits} unit weights.`,
+    `// Refreshed: ${new Date().toISOString()} — ${
+      ingredients.length
+    } ingredients, ${keptUnits} unit weights.`,
     "// Refresh with: node scripts/build-data.js (data file is committed; not a build step).",
     "",
   ].join("\n");

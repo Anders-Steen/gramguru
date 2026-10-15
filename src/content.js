@@ -7,26 +7,55 @@ import { convertText } from "./convert.js";
 const MARK = "gg";
 const HAS_NUMBER = /\d|[½¼¾⅓⅔⅛⅜⅝⅞]/;
 const SKIP_TAGS = new Set([
-    "SCRIPT",
-    "STYLE",
-    "NOSCRIPT",
-    "TEXTAREA",
-    "INPUT",
-    "SELECT",
-    "OPTION",
-    "CODE",
-    "PRE",
-    "KBD",
-    "SAMP",
-    "SVG",
-    "MATH",
+  "SCRIPT",
+  "STYLE",
+  "NOSCRIPT",
+  "TEXTAREA",
+  "INPUT",
+  "SELECT",
+  "OPTION",
+  "CODE",
+  "PRE",
+  "KBD",
+  "SAMP",
+  "SVG",
+  "MATH",
 ]);
 // Tags treated as inline (not block boundaries). Everything else ends a block.
 const INLINE = new Set([
-    "A", "ABBR", "B", "BDI", "BDO", "BIG", "BR", "CITE", "CODE", "DATA", "DFN",
-    "EM", "FONT", "I", "KBD", "LABEL", "MARK", "Q", "RP", "RT", "RUBY", "S",
-    "SAMP", "SMALL", "SPAN", "STRONG", "SUB", "SUP", "TIME", "TT", "U", "VAR",
-    "WBR",
+  "A",
+  "ABBR",
+  "B",
+  "BDI",
+  "BDO",
+  "BIG",
+  "BR",
+  "CITE",
+  "CODE",
+  "DATA",
+  "DFN",
+  "EM",
+  "FONT",
+  "I",
+  "KBD",
+  "LABEL",
+  "MARK",
+  "Q",
+  "RP",
+  "RT",
+  "RUBY",
+  "S",
+  "SAMP",
+  "SMALL",
+  "SPAN",
+  "STRONG",
+  "SUB",
+  "SUP",
+  "TIME",
+  "TT",
+  "U",
+  "VAR",
+  "WBR",
 ]);
 const processedBlocks = new WeakSet();
 let observer = null;
@@ -34,269 +63,239 @@ let scheduled = false;
 let total = 0;
 let markSeq = 0;
 function isSkipped(node) {
-    const parent = node.parentElement;
-    if (!parent)
-        return true;
-    if (SKIP_TAGS.has(parent.tagName))
-        return true;
-    if (parent.closest("." + MARK) || parent.closest("#gg-tip"))
-        return true;
-    return parent.isContentEditable;
+  const parent = node.parentElement;
+  if (!parent) return true;
+  if (SKIP_TAGS.has(parent.tagName)) return true;
+  if (parent.closest("." + MARK) || parent.closest("#gg-tip")) return true;
+  return parent.isContentEditable;
 }
 function collectLeafBlocks(root, out) {
-    if (SKIP_TAGS.has(root.tagName) || root.id === "gg-tip")
-        return;
-    const blockChildren = Array.from(root.children).filter((child) => !INLINE.has(child.tagName));
-    if (blockChildren.length === 0) {
-        if (root.textContent && root.textContent.trim() !== "")
-            out.push(root);
-        return;
-    }
-    for (const child of blockChildren)
-        collectLeafBlocks(child, out);
+  if (SKIP_TAGS.has(root.tagName) || root.id === "gg-tip") return;
+  const blockChildren = Array.from(root.children).filter((child) => !INLINE.has(child.tagName));
+  if (blockChildren.length === 0) {
+    if (root.textContent && root.textContent.trim() !== "") out.push(root);
+    return;
+  }
+  for (const child of blockChildren) collectLeafBlocks(child, out);
 }
-// One visible span per conversion: it shows the metric value. The original
-// text is kept in the tooltip (and in data-gg-original).
+// One span per conversion. It shows the metric value, or — for an unknown
+// ingredient — the "wet/dry" estimates ("30/18 g wet/dry"), or the original
+// amount for count units. The full note lives in the tooltip (title +
+// data-gg-tip); the matched original is kept in data-gg-original.
 function makeSpan(match, id) {
-    const span = document.createElement("span");
-    span.className =
-        MARK +
-            " gg-end" +
-            (match.unknown ? " gg-unknown" : "") +
-            (match.imperial && !match.unknown ? " gg-imperial" : "");
-    span.dataset.ggId = id;
-    span.dataset.gg = match.unknown ? "" : match.metric;
-    span.dataset.ggMarker = match.marker;
-    span.dataset.ggOriginal = match.text.trim();
-    span.dataset.ggTip = match.note;
-    span.title = match.note;
-    span.setAttribute("aria-label", match.note);
-    // Unknown volume: show both estimates inline, e.g. "30 g liq / 18 g dry".
-    // Unknown count: keep the original amount+unit.
-    if (match.unknown && match.estimates) {
-        span.textContent = match.estimates.dry
-            ? `${match.estimates.liquid}/${match.estimates.dry} g wet/dry`
-            : `${match.estimates.liquid} g`;
-    }
-    else {
-        span.textContent = match.unknown ? match.original : match.metric;
-    }
-    return span;
+  const span = document.createElement("span");
+  span.className =
+    MARK +
+    " gg-end" +
+    (match.unknown ? " gg-unknown" : "") +
+    (match.imperial && !match.unknown ? " gg-imperial" : "");
+  span.dataset.ggId = id;
+  span.dataset.ggMarker = match.marker;
+  span.dataset.ggOriginal = match.text.trim();
+  span.dataset.ggTip = match.note;
+  span.title = match.note;
+  if (match.unknown && match.estimates) {
+    span.textContent = match.estimates.dry
+      ? `${match.estimates.liquid}/${match.estimates.dry} g wet/dry`
+      : `${match.estimates.liquid} g`;
+  } else {
+    span.textContent = match.unknown ? match.original : match.metric;
+  }
+  return span;
 }
 // Native title tooltips never appear on touch (Android). Show a tap-friendly
 // floating tooltip instead, and use it for hover too so desktop is consistent.
 let tipEl = null;
 function ensureTip() {
-    if (tipEl && tipEl.isConnected)
-        return tipEl;
-    tipEl = document.createElement("div");
-    tipEl.id = "gg-tip";
-    tipEl.setAttribute("role", "tooltip");
-    document.documentElement.appendChild(tipEl);
-    return tipEl;
+  if (tipEl && tipEl.isConnected) return tipEl;
+  tipEl = document.createElement("div");
+  tipEl.id = "gg-tip";
+  tipEl.setAttribute("role", "tooltip");
+  document.documentElement.appendChild(tipEl);
+  return tipEl;
 }
 function showTip(target) {
-    const note = target.dataset.ggTip || target.getAttribute("aria-label") || "";
-    if (!note)
-        return;
-    const tip = ensureTip();
-    tip.textContent = note;
-    tip.style.display = "block";
-    const rect = target.getBoundingClientRect();
-    const tipRect = tip.getBoundingClientRect();
-    let top = rect.top - tipRect.height - 8;
-    if (top < 4)
-        top = rect.bottom + 8;
-    let left = rect.left + rect.width / 2 - tipRect.width / 2;
-    left = Math.max(4, Math.min(left, window.innerWidth - tipRect.width - 4));
-    tip.style.top = `${Math.round(top)}px`;
-    tip.style.left = `${Math.round(left)}px`;
+  const note = target.dataset.ggTip || target.getAttribute("aria-label") || "";
+  if (!note) return;
+  const tip = ensureTip();
+  tip.textContent = note;
+  tip.style.display = "block";
+  const rect = target.getBoundingClientRect();
+  const tipRect = tip.getBoundingClientRect();
+  let top = rect.top - tipRect.height - 8;
+  if (top < 4) top = rect.bottom + 8;
+  let left = rect.left + rect.width / 2 - tipRect.width / 2;
+  left = Math.max(4, Math.min(left, window.innerWidth - tipRect.width - 4));
+  tip.style.top = `${Math.round(top)}px`;
+  tip.style.left = `${Math.round(left)}px`;
 }
 function hideTip() {
-    if (tipEl)
-        tipEl.style.display = "none";
+  if (tipEl) tipEl.style.display = "none";
 }
-function onTipClick(event) {
-    const target = event.target instanceof Element ? event.target.closest("." + MARK) : null;
-    if (target && target.dataset.ggTip)
-        showTip(target);
-    else
-        hideTip();
-}
-function onTipOver(event) {
-    const target = event.target instanceof Element ? event.target.closest("." + MARK) : null;
-    if (target && target.dataset.ggTip)
-        showTip(target);
-    else
-        hideTip();
+function onTipEvent(event) {
+  const target = event.target instanceof Element ? event.target.closest("." + MARK) : null;
+  if (target && target.dataset.ggTip) showTip(target);
+  else hideTip();
 }
 function annotateBlock(block) {
-    const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
-        acceptNode(node) {
-            const text = node;
-            if (!text.nodeValue || text.nodeValue.length > 400) {
-                return NodeFilter.FILTER_REJECT;
-            }
-            return isSkipped(text) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
-        },
-    });
-    const nodes = [];
-    let node;
-    while ((node = walker.nextNode()))
-        nodes.push(node);
-    if (nodes.length === 0)
-        return 0;
-    // Flatten the block's inline text, remembering where each node lives.
-    const map = [];
-    let joined = "";
-    for (const textNode of nodes) {
-        const value = textNode.nodeValue ?? "";
-        map.push({ node: textNode, start: joined.length, end: joined.length + value.length });
-        joined += value;
+  const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const text = node;
+      if (!text.nodeValue || text.nodeValue.length > 400) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      return isSkipped(text) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+    },
+  });
+  const nodes = [];
+  let node;
+  while ((node = walker.nextNode())) nodes.push(node);
+  if (nodes.length === 0) return 0;
+  // Flatten the block's inline text, remembering where each node lives.
+  const map = [];
+  let joined = "";
+  for (const textNode of nodes) {
+    const value = textNode.nodeValue ?? "";
+    map.push({ node: textNode, start: joined.length, end: joined.length + value.length });
+    joined += value;
+  }
+  if (!HAS_NUMBER.test(joined)) return 0;
+  // Some sites (e.g. tine.no) put the amount+unit and the ingredient in
+  // separate cells of a flex/grid row. Pull in the adjacent cell as an
+  // ingredient hint so "6 stk" + "egg" resolves.
+  let fallback = "";
+  const parent = block.parentElement;
+  if (parent && joined.length <= 60) {
+    const display = getComputedStyle(parent).display;
+    if (
+      display === "flex" ||
+      display === "inline-flex" ||
+      display === "grid" ||
+      display === "inline-grid"
+    ) {
+      fallback = [block.previousElementSibling, block.nextElementSibling]
+        .filter(Boolean)
+        .map((el) => el.textContent || "")
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 100);
     }
-    if (!HAS_NUMBER.test(joined))
-        return 0;
-    // Some sites (e.g. tine.no) put the amount+unit and the ingredient in
-    // separate cells of a flex/grid row. Pull in the adjacent cell as an
-    // ingredient hint so "6 stk" + "egg" resolves.
-    let fallback = "";
-    const parent = block.parentElement;
-    if (parent && joined.length <= 60) {
-        const display = getComputedStyle(parent).display;
-        if (display === "flex" || display === "inline-flex" ||
-            display === "grid" || display === "inline-grid") {
-            fallback = [block.previousElementSibling, block.nextElementSibling]
-                .filter(Boolean)
-                .map((el) => el.textContent || "")
-                .join(" ")
-                .replace(/\s+/g, " ")
-                .trim()
-                .slice(0, 100);
-        }
+  }
+  const matches = convertText(joined, fallback);
+  if (matches.length === 0) return 0;
+  const portions = new Map();
+  for (const match of matches) {
+    const id = `${block.tagName}#${markSeq++}`;
+    let first = true;
+    // Only the amount+unit is replaced; the ingredient phrase (after
+    // unitEnd) is left in place, so the page reads e.g. "27 g hvetemel".
+    for (const entry of map) {
+      if (entry.start >= match.unitEnd || entry.end <= match.start) continue;
+      const from = Math.max(match.start, entry.start) - entry.start;
+      const to = Math.min(match.unitEnd, entry.end) - entry.start;
+      const list = portions.get(entry.node) ?? [];
+      list.push({ from, to, match, id, show: first });
+      portions.set(entry.node, list);
+      first = false;
     }
-    const matches = convertText(joined, fallback);
-    if (matches.length === 0)
-        return 0;
-    const portions = new Map();
-    for (const match of matches) {
-        const id = `${block.tagName}#${markSeq++}`;
-        let first = true;
-        // Only the amount+unit is replaced; the ingredient phrase (after
-        // unitEnd) is left in place, so the page reads e.g. "27 g hvetemel".
-        for (const entry of map) {
-            if (entry.start >= match.unitEnd || entry.end <= match.start)
-                continue;
-            const from = Math.max(match.start, entry.start) - entry.start;
-            const to = Math.min(match.unitEnd, entry.end) - entry.start;
-            const list = portions.get(entry.node) ?? [];
-            list.push({ from, to, match, id, show: first });
-            portions.set(entry.node, list);
-            first = false;
-        }
+  }
+  for (const [textNode, list] of portions) {
+    list.sort((a, b) => a.from - b.from);
+    const value = textNode.nodeValue ?? "";
+    const fragment = document.createDocumentFragment();
+    let cursor = 0;
+    for (const portion of list) {
+      if (portion.from > cursor) {
+        fragment.appendChild(document.createTextNode(value.slice(cursor, portion.from)));
+      }
+      // Show the metric once (at the first covered node); drop the rest of
+      // the matched original text so the page reads in grams.
+      if (portion.show) {
+        fragment.appendChild(makeSpan(portion.match, portion.id));
+      }
+      cursor = portion.to;
     }
-    for (const [textNode, list] of portions) {
-        list.sort((a, b) => a.from - b.from);
-        const value = textNode.nodeValue ?? "";
-        const fragment = document.createDocumentFragment();
-        let cursor = 0;
-        for (const portion of list) {
-            if (portion.from > cursor) {
-                fragment.appendChild(document.createTextNode(value.slice(cursor, portion.from)));
-            }
-            // Show the metric once (at the first covered node); drop the rest of
-            // the matched original text so the page reads in grams.
-            if (portion.show) {
-                fragment.appendChild(makeSpan(portion.match, portion.id));
-            }
-            cursor = portion.to;
-        }
-        if (cursor < value.length) {
-            fragment.appendChild(document.createTextNode(value.slice(cursor)));
-        }
-        textNode.parentNode?.replaceChild(fragment, textNode);
+    if (cursor < value.length) {
+      fragment.appendChild(document.createTextNode(value.slice(cursor)));
     }
-    return matches.length;
+    textNode.parentNode?.replaceChild(fragment, textNode);
+  }
+  return matches.length;
 }
 function scan(root) {
-    if (!root.isConnected)
-        return;
-    const blocks = [];
-    collectLeafBlocks(root, blocks);
-    let added = 0;
-    for (const block of blocks) {
-        if (processedBlocks.has(block))
-            continue;
-        processedBlocks.add(block);
-        added += annotateBlock(block);
-    }
-    if (added > 0) {
-        total += added;
-        report();
-    }
+  if (!root.isConnected) return;
+  const blocks = [];
+  collectLeafBlocks(root, blocks);
+  let added = 0;
+  for (const block of blocks) {
+    if (processedBlocks.has(block)) continue;
+    processedBlocks.add(block);
+    added += annotateBlock(block);
+  }
+  if (added > 0) {
+    total += added;
+    report();
+  }
 }
 function report() {
-    void browser.runtime.sendMessage({ type: "gg-count", count: total }).catch(() => {
-        /* no background listener; ignore */
-    });
+  void browser.runtime.sendMessage({ type: "gg-count", count: total }).catch(() => {
+    /* no background listener; ignore */
+  });
 }
 function schedule() {
-    if (scheduled)
-        return;
-    scheduled = true;
-    setTimeout(() => {
-        scheduled = false;
-        scan(document.body);
-    }, 500);
-}
-function start() {
-    // Attach listeners first so a mark is never shown before it's interactive.
-    document.addEventListener("click", onTipClick, true);
-    document.addEventListener("mouseover", onTipOver, true);
-    document.addEventListener("scroll", hideTip, true);
-    document.addEventListener("touchend", onTipClick, true);
-    window.addEventListener("resize", hideTip);
-    window.addEventListener("touchmove", hideTip, { passive: true });
+  if (scheduled) return;
+  scheduled = true;
+  setTimeout(() => {
+    scheduled = false;
     scan(document.body);
-    observer = new MutationObserver((mutations) => {
-        if (mutations.some((m) => m.addedNodes.length > 0))
-            schedule();
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
+  }, 500);
+}
+// [target, type, handler, options] — added and removed symmetrically.
+const LISTENERS = [
+  [document, "click", onTipEvent, true],
+  [document, "mouseover", onTipEvent, true],
+  [document, "touchend", onTipEvent, true],
+  [document, "scroll", hideTip, true],
+  [window, "resize", hideTip, undefined],
+  [window, "touchmove", hideTip, { passive: true }],
+];
+function start() {
+  // Attach listeners first so a mark is never shown before it's interactive.
+  for (const [target, type, handler, options] of LISTENERS)
+    target.addEventListener(type, handler, options);
+  scan(document.body);
+  observer = new MutationObserver((mutations) => {
+    if (mutations.some((m) => m.addedNodes.length > 0)) schedule();
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
 }
 function stop() {
-    observer?.disconnect();
-    observer = null;
-    document.removeEventListener("click", onTipClick, true);
-    document.removeEventListener("mouseover", onTipOver, true);
-    document.removeEventListener("scroll", hideTip, true);
-    document.removeEventListener("touchend", onTipClick, true);
-    window.removeEventListener("resize", hideTip);
-    window.removeEventListener("touchmove", hideTip);
-    hideTip();
-    for (const el of document.querySelectorAll("." + MARK)) {
-        el.parentNode?.replaceChild(document.createTextNode(el.textContent ?? ""), el);
-    }
-    total = 0;
-    report();
+  observer?.disconnect();
+  observer = null;
+  for (const [target, type, handler, options] of LISTENERS)
+    target.removeEventListener(type, handler, options);
+  hideTip();
+  for (const el of document.querySelectorAll("." + MARK)) {
+    el.parentNode?.replaceChild(document.createTextNode(el.textContent ?? ""), el);
+  }
+  total = 0;
+  report();
 }
 async function init() {
-    const { enabled = true } = await browser.storage.local.get("enabled");
-    if (enabled)
-        start();
-    browser.storage.onChanged.addListener((changes, area) => {
-        if (area !== "local" || !("enabled" in changes))
-            return;
-        if (changes.enabled.newValue) {
-            if (!observer)
-                start();
-        }
-        else {
-            stop();
-        }
-    });
+  const { enabled = true } = await browser.storage.local.get("enabled");
+  if (enabled) start();
+  browser.storage.onChanged.addListener((changes, area) => {
+    if (area !== "local" || !("enabled" in changes)) return;
+    if (changes.enabled.newValue) {
+      if (!observer) start();
+    } else {
+      stop();
+    }
+  });
 }
 const ggWindow = window;
 if (!ggWindow.__gramGuruLoaded) {
-    ggWindow.__gramGuruLoaded = true;
-    init().catch((err) => console.error("[GramGuru]", err));
+  ggWindow.__gramGuruLoaded = true;
+  init().catch((err) => console.error("[GramGuru]", err));
 }

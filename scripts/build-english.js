@@ -11,19 +11,58 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const ZIP_URL = "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip";
+const ZIP_URL =
+  "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip";
 const CACHE = join(tmpdir(), "gramguru-usda.zip");
 const WORK = join(tmpdir(), "gramguru-usda");
 const OUT = new URL("../src/english.js", import.meta.url);
 
-const UNIT_KEYS = ["uscup", "tablespoon", "teaspoon", "ounce", "pound", "milliliter", "liter", "piece"];
+const UNIT_KEYS = [
+  "uscup",
+  "tablespoon",
+  "teaspoon",
+  "ounce",
+  "pound",
+  "milliliter",
+  "liter",
+  "piece",
+];
 const WANT_KEYS = ["uscup", "tablespoon", "teaspoon", "ounce", "pound", "piece"];
 const STOP = new Set([
-  "raw", "cooked", "frozen", "canned", "dried", "enriched", "fortified", "bleached",
-  "unprepared", "prepared", "ready-to-eat", "roasted", "boiled", "baked", "grilled",
-  "fried", "sliced", "chopped", "diced", "whole", "fresh", "salted", "unsalted",
-  "dry", "wet", "solid", "liquid", "ns as to", "with salt", "without salt",
-  "includes", "all varieties", "not further specified", "nfs",
+  "raw",
+  "cooked",
+  "frozen",
+  "canned",
+  "dried",
+  "enriched",
+  "fortified",
+  "bleached",
+  "unprepared",
+  "prepared",
+  "ready-to-eat",
+  "roasted",
+  "boiled",
+  "baked",
+  "grilled",
+  "fried",
+  "sliced",
+  "chopped",
+  "diced",
+  "whole",
+  "fresh",
+  "salted",
+  "unsalted",
+  "dry",
+  "wet",
+  "solid",
+  "liquid",
+  "ns as to",
+  "with salt",
+  "without salt",
+  "includes",
+  "all varieties",
+  "not further specified",
+  "nfs",
 ]);
 
 function cleanKey(segment) {
@@ -45,7 +84,11 @@ function dataKeys(modifier) {
   if (m === "lb" || m === "pound" || m === "pounds") return "pound";
   if (m === "ml" || m === "milliliter") return "milliliter";
   if (m === "l" || m === "liter") return "liter";
-  if (/^(slice|piece|medium|large|small|unit|fillet|bar|can|jar|stalk|clove|whole|each|item|serving|bunch|head|leaf|leaves|sprig|link|patty|strip|wedge|spear|ear|cube|ball|cookie|cracker|chip|nugget)/.test(m))
+  if (
+    /^(slice|piece|medium|large|small|unit|fillet|bar|can|jar|stalk|clove|whole|each|item|serving|bunch|head|leaf|leaves|sprig|link|patty|strip|wedge|spear|ear|cube|ball|cookie|cracker|chip|nugget)/.test(
+      m,
+    )
+  )
     return "piece";
   return null;
 }
@@ -53,27 +96,44 @@ function dataKeys(modifier) {
 // Minimal CSV parser (handles quoted fields and embedded newlines).
 function parseCsv(text) {
   const rows = [];
-  let row = [], field = "", inQuotes = false;
+  let row = [],
+    field = "",
+    inQuotes = false;
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
     if (inQuotes) {
       if (c === '"') {
-        if (text[i + 1] === '"') { field += '"'; i++; }
-        else inQuotes = false;
+        if (text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else inQuotes = false;
       } else field += c;
     } else if (c === '"') inQuotes = true;
-    else if (c === ",") { row.push(field); field = ""; }
-    else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
-    else if (c === "\r") { /* skip */ }
-    else field += c;
+    else if (c === ",") {
+      row.push(field);
+      field = "";
+    } else if (c === "\n") {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+    } else if (c === "\r") {
+      /* skip */
+    } else field += c;
   }
-  if (field || row.length) { row.push(field); rows.push(row); }
+  if (field || row.length) {
+    row.push(field);
+    rows.push(row);
+  }
   return rows;
 }
 
 function table(rows) {
   const header = rows[0];
-  return rows.slice(1).filter((r) => r.length === header.length).map((r) => Object.fromEntries(header.map((h, i) => [h, r[i]])));
+  return rows
+    .slice(1)
+    .filter((r) => r.length === header.length)
+    .map((r) => Object.fromEntries(header.map((h, i) => [h, r[i]])));
 }
 
 async function main() {
@@ -137,7 +197,15 @@ async function main() {
     "",
   ].join("\n");
   writeFileSync(OUT, `${banner}export const ENGLISH_INGREDIENTS = ${JSON.stringify(entries)};\n`);
-  console.log(`wrote ${OUT.pathname} — ${entries.length} entries (${((banner.length + JSON.stringify(entries).length) / 1024).toFixed(0)} KB)`);
+  console.log(
+    `wrote ${OUT.pathname} — ${entries.length} entries (${(
+      (banner.length + JSON.stringify(entries).length) /
+      1024
+    ).toFixed(0)} KB)`,
+  );
 }
 
-main().catch((err) => { console.error(err); process.exit(1); });
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
