@@ -1,7 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="GramGuru monocle">
-  <rect width="128" height="128" rx="28" fill="#2e7d32"/>
-  <text x="60" y="94" text-anchor="middle" font-family="DejaVu Serif, Georgia, serif"
-        font-size="104" font-weight="700" fill="#ffffff">g</text>
-  <circle cx="88" cy="66" r="21" fill="none" stroke="#ffd54f" stroke-width="7"/>
-  <line x1="104" y1="82" x2="122" y2="102" stroke="#ffd54f" stroke-width="7" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3c9a41"/>
+      <stop offset="1" stop-color="#22641f"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
+  <text x="56" y="94" text-anchor="middle" font-family="DejaVu Serif, Georgia, serif"
+        font-size="102" font-weight="700" fill="#ffffff">g</text>
+  <circle cx="92" cy="58" r="19" fill="none" stroke="#ffd54f" stroke-width="7"/>
+  <line x1="106" y1="72" x2="121" y2="91" stroke="#ffd54f" stroke-width="7" stroke-linecap="round"/>
 </svg>

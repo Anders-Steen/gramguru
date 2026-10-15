@@ -1,6 +1,6 @@
 {
   "name": "gramguru",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Firefox extension that converts Norwegian recipe units (ss, ts, dl, kopp ...) into grams. Metric only, always.",
   "private": true,
   "type": "module",
