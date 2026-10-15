@@ -191,7 +191,26 @@ function lookupIngredient(phrase) {
                 return { units: hit, name: form };
         }
     }
+    // Compound-word fallback: Norwegian heads are last, so "lettmelk" -> "melk",
+    // "meierismør" -> "smør", "rørsukker" -> "sukker".
+    for (const word of words) {
+        for (let len = word.length - 1; len >= 4; len--) {
+            const suffix = word.slice(word.length - len);
+            const hit = INDEX.get(suffix);
+            if (hit)
+                return { units: hit, name: suffix };
+        }
+    }
     return null;
+}
+// How to treat a unit when the ingredient (or its weight) is unknown.
+const MASS_KEYS = new Set(["ounce", "pound"]);
+function unitKind(def) {
+    if (def.key === "piece")
+        return "count"; // stk, pk, skive, neve, fedd, ... — never guess
+    if (MASS_KEYS.has(def.key))
+        return "mass"; // exact constants
+    return "volume"; // l, dl, ss, ts, kopp ... — water approximation is fine
 }
 function stripDescriptors(phrase) {
     return phrase
@@ -229,7 +248,9 @@ const MATCH_RE = new RegExp(`(?<![\\p{L}\\p{N}])` +
     `(\\d+(?:[.,]\\d+)?|\\d+\\s*/\\s*\\d+|[½¼¾⅓⅔⅛⅜⅝⅞])\\s*` +
     `(${UNIT_ALTERNATION})\\b\\.?`, "giu");
 const INGREDIENT_RE = /^[\s]+([\p{L}][\p{L}\p{N}-]*(?:\s+[\p{L}][\p{L}\p{N}-]*){0,3})/u;
-export function convertText(text) {
+// `fallbackIngredient` is the text of an adjacent cell on the same row (some
+// sites put the amount and the ingredient in separate elements).
+export function convertText(text, fallbackIngredient = "") {
     const matches = [];
     MATCH_RE.lastIndex = 0;
     let m;
@@ -243,12 +264,18 @@ export function convertText(text) {
             continue;
         const after = text.slice(m.index + m[0].length);
         const ingredientMatch = after.match(INGREDIENT_RE);
-        let ingredientPhrase = ingredientMatch ? ingredientMatch[1] : "";
+        const trailingIngredient = ingredientMatch ? ingredientMatch[1] : "";
+        const usedFallback = !trailingIngredient && Boolean(fallbackIngredient);
+        const ingredientPhrase = trailingIngredient || fallbackIngredient;
         // Where the amount+unit part ends and the ingredient phrase (if any) begins.
         const unitEnd = m.index + m[0].length;
         let end = unitEnd;
         if (ingredientMatch)
             end += ingredientMatch[0].length;
+        const baseText = text.slice(m.index, end);
+        const rawText = usedFallback
+            ? `${baseText} ${fallbackIngredient.trim()}`.replace(/\s+/g, " ").trim()
+            : baseText;
         const found = lookupIngredient(ingredientPhrase) ?? lookupIngredient(stripDescriptors(ingredientPhrase));
         let grams;
         let approximate;
@@ -259,12 +286,18 @@ export function convertText(text) {
             ingredientName = found.name;
         }
         else {
+            const kind = unitKind(def);
+            if (kind === "count") {
+                // Refuse to guess "1 piece = 100 g". Leave it alone.
+                MATCH_RE.lastIndex = end;
+                continue;
+            }
             grams = quantity * def.generic * (def.mul ?? 1);
-            approximate = true;
+            approximate = kind !== "mass";
         }
         const metric = formatGrams(grams);
         const note = buildNote({
-            rawText: text.slice(m.index, end),
+            rawText,
             metric,
             approximate,
             imperial: Boolean(def.imperial),
@@ -274,12 +307,13 @@ export function convertText(text) {
             start: m.index,
             unitEnd,
             end,
-            text: text.slice(m.index, end),
+            text: rawText,
             grams,
             metric,
             quantity,
             unitLabel: m[2],
             unitKey: def.key,
+            unitMul: def.mul ?? 1,
             ingredient: ingredientName,
             approximate,
             imperial: Boolean(def.imperial),
@@ -292,7 +326,7 @@ export function convertText(text) {
 function buildNote(args) {
     const raw = args.rawText.trim();
     if (args.approximate) {
-        return `${raw} ≈ ${args.metric} (approx) 🤷`;
+        return `${raw} ≈ ${args.metric} (approx) 🤷 (assumed water)`;
     }
     if (args.imperial) {
         return `${raw} = ${args.metric} (exact) 🔪 death to imperialism`;

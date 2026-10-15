@@ -146,7 +146,25 @@ function annotateBlock(block) {
     }
     if (!HAS_NUMBER.test(joined))
         return 0;
-    const matches = convertText(joined);
+    // Some sites (e.g. tine.no) put the amount+unit and the ingredient in
+    // separate cells of a flex/grid row. Pull in the adjacent cell as an
+    // ingredient hint so "6 stk" + "egg" resolves.
+    let fallback = "";
+    const parent = block.parentElement;
+    if (parent && joined.length <= 60) {
+        const display = getComputedStyle(parent).display;
+        if (display === "flex" || display === "inline-flex" ||
+            display === "grid" || display === "inline-grid") {
+            fallback = [block.previousElementSibling, block.nextElementSibling]
+                .filter(Boolean)
+                .map((el) => el.textContent || "")
+                .join(" ")
+                .replace(/\s+/g, " ")
+                .trim()
+                .slice(0, 100);
+        }
+    }
+    const matches = convertText(joined, fallback);
     if (matches.length === 0)
         return 0;
     const portions = new Map();

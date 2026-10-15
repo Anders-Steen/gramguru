@@ -6,6 +6,11 @@ function first(text) {
     assert.ok(matches.length >= 1, `expected a match in ${JSON.stringify(text)}`);
     return matches[0];
 }
+function first2(text, fallback) {
+    const matches = convertText(text, fallback);
+    assert.ok(matches.length >= 1, `expected a match in ${JSON.stringify(text)}`);
+    return matches[0];
+}
 test("tablespoon of flour uses ingredient density", () => {
     const m = first("3 ss hvetemel");
     assert.equal(m.grams, 27);
@@ -41,8 +46,27 @@ test("unknown ingredient falls back to generic and shrugs", () => {
     const m = first("2 ss");
     assert.equal(m.grams, 30);
     assert.equal(m.approximate, true);
-    assert.equal(m.note, "2 ss ≈ 30 g (approx) 🤷");
+    assert.equal(m.note, "2 ss ≈ 30 g (approx) 🤷 (assumed water)");
 });
+test("count units of unknown origin are not guessed", () => {
+  assert.equal(convertText("3 stk").length, 0);
+  assert.equal(convertText("1 pk aspik").length, 0);
+  assert.equal(convertText("2 skiver").length, 0);
+});
+
+test("count units with a known ingredient convert exactly", () => {
+  const m = first("6 stk egg");
+  assert.equal(m.grams, 330);
+  assert.equal(m.approximate, false);
+});
+
+test("adjacent-cell ingredient hint resolves a count unit", () => {
+  const m = first2("6 stk ", "egg");
+  assert.equal(m.grams, 330);
+  assert.equal(m.ingredient, "egg");
+  assert.equal(m.note, "6 stk egg = 330 g (exact) 🧐");
+});
+
 test("imperial ounces are dragged into the metric age", () => {
     const m = first("8 oz smør");
     assert.equal(m.imperial, true);

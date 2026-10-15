@@ -33,8 +33,8 @@ const SITES = [
         expect: [
             { original: "3 ss hvetemel", shown: "27 g", visible: "27 g hvetemel" },
             { original: "1,5 dl melk", shown: "150 g", visible: "150 g melk" },
-            { original: "1 pk aspik", shown: "400 g", emoji: "🤷", visible: "400 g aspik" },
         ],
+        absent: ["1 pk aspik"],
         minMarks: 10,
     },
     {
@@ -45,7 +45,7 @@ const SITES = [
             { original: "3 dl kyllingkraft", shown: "300 g", visible: "300 g kyllingkraft" },
             { original: "1 stk hel kylling", shown: "1.5 kg", visible: "1.5 kg hel kylling" },
         ],
-        minMarks: 11,
+        minMarks: 10,
     },
     {
         name: "matprat bigos",
@@ -56,7 +56,19 @@ const SITES = [
             { original: "5 dl kjøttkraft", shown: "500 g", visible: "500 g kjøttkraft" },
             { original: "0,5 ts salt", shown: "3.5 g", visible: "3.5 g salt" },
         ],
+        absent: ["laurbærblad"],
         minMarks: 9,
+    },
+    {
+        name: "tine egg i form",
+        url: "https://www.tine.no/oppskrifter/lunsj-og-smaretter/omeletter-og-pannekaker/egg-i-form",
+        expect: [
+            { original: "6 stk egg", shown: "330 g", visible: "330 g egg" },
+            { original: "1 dl TINE® Lettmelk 1,0 % fett", shown: "100 g", visible: "100 g TINE® Lettmelk" },
+            { original: "1 ts TINE® Meierismør til smøring av form", shown: "7 g", visible: "7 g TINE® Meierismør" },
+            { original: "1 fedd hvitløk", shown: "55 g", visible: "55 g hvitløk" },
+        ],
+        minMarks: 7,
     },
 ];
 class Bidi {
@@ -193,8 +205,15 @@ function check(name, marks, pageText, site) {
             problems.push(`${JSON.stringify(expected.original)} tooltip lacks ${expected.emoji}`);
         }
         if (expected.visible && !pageText.includes(expected.visible)) {
-            problems.push(`page text lacks the ingredient: expected ${JSON.stringify(expected.visible)}`);
+            const at = pageText.indexOf(expected.shown);
+            const near = at >= 0 ? pageText.slice(at, at + 70) : "(value not in visible text)";
+            problems.push(`page text lacks the ingredient: expected ${JSON.stringify(expected.visible)} | near: ${JSON.stringify(near)}`);
         }
+    }
+    for (const absent of site.absent ?? []) {
+        const hit = marks.find((m) => (m.original || "").includes(absent));
+        if (hit)
+            problems.push(`must not convert ${JSON.stringify(absent)} but produced ${JSON.stringify(hit.text)}`);
     }
     const ok = problems.length === 0;
     console.log(`\n${ok ? "✔" : "✖"} ${name} (${marks.length} marks)`);

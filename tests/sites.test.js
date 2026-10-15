@@ -75,7 +75,7 @@ function metricFor(results, needle) {
 test("matprat leverpostei converts", async () => {
     const results = convertAll(await loadIngredients("leverpostei", SITES.leverpostei));
     const convertible = results.filter((r) => r.matches.length > 0);
-    assert.equal(convertible.length, 10);
+    assert.equal(convertible.length, 9);
     assert.deepEqual(metricFor(results, "3 ss hvetemel"), ["27 g"]);
     assert.deepEqual(metricFor(results, "1,5 dl melk"), ["150 g"]);
     assert.deepEqual(metricFor(results, "1,5 ts salt"), ["10.5 g"]);
@@ -89,7 +89,7 @@ test("matprat leverpostei converts", async () => {
 test("meny roast chicken converts", async () => {
     const results = convertAll(await loadIngredients("kylling", SITES.kylling));
     const convertible = results.filter((r) => r.matches.length > 0);
-    assert.equal(convertible.length, 11);
+    assert.equal(convertible.length, 10);
     assert.deepEqual(metricFor(results, "1 stk hel kylling"), ["1.5 kg"]);
     assert.deepEqual(metricFor(results, "3 stk gulrøtter"), ["270 g"]);
     assert.deepEqual(metricFor(results, "2 dl hvitvin"), ["200 g"]);
