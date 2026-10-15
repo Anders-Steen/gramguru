@@ -92,11 +92,15 @@ It creates the listing if it doesn't exist yet, otherwise adds a version.
 
 Beta channel (unlisted/self-distributed): built with `node scripts/package.js --beta`
 (id `gramguru-beta@anderss`, `update_url` → `updates.json`). Publishing unlisted
-(`--channel unlisted`, `AMO_ADDON_ID=gramguru-beta@anderss`) downloads the signed
-XPI and appends `{version, update_link}` to `updates.json` via `recordUpdate()`.
-Commit + push `updates.json` so installed betas pick up the update. Firefox only
-ever reads the `update_url` from the installed version, so it must ship in the
-first build.
+(`--channel unlisted`, `AMO_ADDON_ID=gramguru-beta@anderss`; source `.env` then
+override `AMO_ADDON_ID`) downloads the AMO-signed XPI into `beta/` (the AMO
+download link needs the JWT) and appends `{version, update_link}` to
+`updates.json` via `recordUpdate()`, where `update_link` is the repo raw URL
+(`REPO_RAW_BASE`). Commit + push `beta/` and `updates.json` so installed betas
+pick up the update. Firefox only ever reads the `update_url` from the installed
+version, so it must ship in the first build. Unlisted signing is async — the
+backend `file.status` flips from `unreviewed` to `public` (and `.zip` → `.xpi`)
+after ~45s.
 
 ## When something is ambiguous
 

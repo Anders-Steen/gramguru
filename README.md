@@ -74,11 +74,13 @@ review wait. Override with `BETA_ADDON_ID`, `BETA_VERSION`, `BETA_UPDATE_URL`.
 
 Because self-distributed add-ons don't auto-update through AMO, beta builds set
 `browser_specific_settings.gecko.update_url` to the HTTPS `updates.json` in this
-repo. Publishing an unlisted version (`scripts/publish.js --channel unlisted`)
-downloads the signed XPI and records its `version` + `update_link` in
-`updates.json`; commit and push that file to deliver the update. Firefox keeps
-using the `update_url` baked into the installed version, so it must be present
-from the first install.
+repo. AMO's unlisted download link is developer-only (auth required), so the
+signed XPI is committed under `beta/` and served from the repo's raw URL.
+`scripts/publish.js --channel unlisted` downloads the signed XPI into `beta/`
+and records `{version, update_link}` in `updates.json`; commit + push both to
+deliver the update. Firefox keeps using the `update_url` baked into the installed
+version, so it must be present from the first install (betas built before it was
+added won't auto-update and need one manual reinstall).
 
 `node --test` fetches the real recipe pages and asserts the conversions. Offline?
 It falls back to cached fixtures in `tests/fixtures/`. Refresh fixtures with
