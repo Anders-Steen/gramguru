@@ -19,6 +19,7 @@
     "screenshots": "node scripts/screenshots.js",
     "package": "node scripts/package.js",
     "publish:amo": "node scripts/publish.js",
+    "media": "node scripts/upload-media.js",
     "data": "node scripts/build-data.js"
   }
 }
