@@ -2,6 +2,7 @@
 //
 // Philosophy: the world agreed on grams. Everything else is a rounding error.
 import { MATPRAT_INGREDIENTS } from "./data.js";
+import { ENGLISH_INGREDIENTS } from "./english.js";
 // alias (lowercase) -> definition. Longest aliases win at match time.
 const UNITS = {
     // Norwegian household measures
@@ -253,8 +254,16 @@ const INDEX = (() => {
         if (target)
             map.set(normalize(en), target);
     }
+    // USDA English table fills the gaps (curated aliases and matprat win).
+    for (const entry of ENGLISH_INGREDIENTS) {
+        const key = normalize(entry.n);
+        if (key && !map.has(key))
+            map.set(key, entry.u);
+    }
     return map;
 })();
+// Wheat flour is the "dry" reference for unknown volume units.
+const FLOUR = INDEX.get("hvetemel");
 function lookupIngredient(phrase) {
     const norm = normalize(phrase);
     if (!norm)
@@ -387,37 +396,41 @@ export function convertText(text, fallbackIngredient = "") {
         const found = def.genericOnly
             ? null
             : lookupIngredient(ingredientPhrase) ?? lookupIngredient(stripDescriptors(ingredientPhrase));
-        let grams;
-        let approximate;
+        let grams = null;
+        let unknown = false;
+        let estimates = null;
         let ingredientName = null;
         if (found && found.units[def.key] !== undefined) {
             grams = quantity * found.units[def.key] * (def.mul ?? 1);
-            approximate = false;
             ingredientName = found.name;
         }
         else {
             const kind = unitKind(def);
-            if (kind === "count") {
-                // Refuse to guess "1 piece = 100 g". Leave it alone.
-                MATCH_RE.lastIndex = end;
-                continue;
+            if (kind === "mass") {
+                // oz/lb are exact constants regardless of ingredient.
+                grams = quantity * def.generic * (def.mul ?? 1);
             }
-            grams = quantity * def.generic * (def.mul ?? 1);
-            approximate = kind !== "mass";
+            else {
+                // Unknown ingredient: don't guess a single value. Keep the original
+                // and offer liquid (water) + dry (flour) estimates instead.
+                unknown = true;
+                if (kind === "volume") {
+                    const liquid = quantity * def.generic * (def.mul ?? 1);
+                    const flourPer = FLOUR ? FLOUR[def.key] : undefined;
+                    const dry = flourPer !== undefined ? quantity * flourPer * (def.mul ?? 1) : null;
+                    estimates = { liquid: formatGrams(liquid), dry: dry !== null ? formatGrams(dry) : null };
+                }
+            }
         }
-        const metric = formatGrams(grams);
-        const note = buildNote({
-            rawText,
-            metric,
-            approximate,
-            imperial: Boolean(def.imperial),
-            ingredientName,
-        });
+        const original = text.slice(m.index, unitEnd);
+        const metric = unknown ? "" : formatGrams(grams);
+        const note = buildNote({ rawText, metric, unknown, estimates, imperial: Boolean(def.imperial) });
         matches.push({
             start: m.index,
             unitEnd,
             end,
             text: rawText,
+            original,
             grams,
             metric,
             quantity,
@@ -425,7 +438,8 @@ export function convertText(text, fallbackIngredient = "") {
             unitKey: def.key,
             unitMul: def.mul ?? 1,
             ingredient: ingredientName,
-            approximate,
+            unknown,
+            estimates,
             imperial: Boolean(def.imperial),
             note,
         });
@@ -435,8 +449,12 @@ export function convertText(text, fallbackIngredient = "") {
 }
 function buildNote(args) {
     const raw = args.rawText.trim();
-    if (args.approximate) {
-        return `${raw} ≈ ${args.metric} (approx) 🤷 (assumed water)`;
+    if (args.unknown) {
+        if (args.estimates) {
+            const dry = args.estimates.dry ? ` · ${args.estimates.dry} (dry, like flour)` : "";
+            return `${raw} ≈ ${args.estimates.liquid} (liquid, like water)${dry}`;
+        }
+        return `${raw} — ingredient not recognised 🤷`;
     }
     if (args.imperial) {
         return `${raw} = ${args.metric} (exact) 🔪 death to imperialism`;

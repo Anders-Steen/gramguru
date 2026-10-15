@@ -22,7 +22,7 @@ const SITES = [
             { original: "3 ss hvetemel", shown: "27 g", emoji: "🧐", visible: "27 g hvetemel" },
             { original: "1,5 dl melk", shown: "150 g", visible: "150 g melk" },
             { original: "3 stk gulrøtter", shown: "270 g", visible: "270 g gulrøtter" },
-            { original: "2 ss", shown: "30 g", emoji: "🤷" },
+            { original: "2 ss", shown: "2 ss", unknown: true },
             { original: "8 oz smør", shown: "226.8 g", emoji: "🔪", visible: "226.8 g smør" },
         ],
         minMarks: 10,
@@ -33,8 +33,8 @@ const SITES = [
         expect: [
             { original: "3 ss hvetemel", shown: "27 g", visible: "27 g hvetemel" },
             { original: "1,5 dl melk", shown: "150 g", visible: "150 g melk" },
+            { original: "1 pk aspik", shown: "1 pk", unknown: true },
         ],
-        absent: ["1 pk aspik"],
         minMarks: 10,
     },
     {
@@ -55,8 +55,8 @@ const SITES = [
             { original: "3 stk. løk", shown: "510 g", visible: "510 g løk" },
             { original: "5 dl kjøttkraft", shown: "500 g", visible: "500 g kjøttkraft" },
             { original: "0,5 ts salt", shown: "3.5 g", visible: "3.5 g salt" },
+            { original: "2 stk. laurbærblad", shown: "2 stk.", unknown: true },
         ],
-        absent: ["laurbærblad"],
         minMarks: 9,
     },
     {
@@ -84,7 +84,7 @@ const SITES = [
     {
         name: "trinesmatblogg kyllinggryte",
         url: "https://trinesmatblogg.no/recipe/kremet-kyllinggryte-med-gnocchi-og-soltorkede-tomater/",
-        expect: [{ original: "1 ½ liter", shown: "1.5 kg", emoji: "🤷" }],
+        expect: [{ original: "1 ½ liter", shown: "1 ½ liter", unknown: true }],
         minMarks: 4,
     },
     // International sites (US/UK units)
@@ -98,7 +98,7 @@ const SITES = [
         name: "bon appetit cookies",
         url: "https://www.bonappetit.com/recipe/bas-best-chocolate-chip-cookies",
         // This recipe states grams in parentheses, so little should convert.
-        expect: [{ original: "3 Tbsp.", shown: "45 g", emoji: "🤷" }],
+        expect: [{ original: "3 Tbsp.", shown: "3 Tbsp.", unknown: true }],
         minMarks: 1,
     },
     {
@@ -214,7 +214,7 @@ async function readMarks(bidi, context) {
         const groups = new Map();
         for (const el of document.querySelectorAll('.gg')) {
           const id = el.dataset.ggId || String(Math.random());
-          const g = groups.get(id) || { text: '', title: el.title, original: el.dataset.ggOriginal || '' };
+          const g = groups.get(id) || { text: '', title: el.title, original: el.dataset.ggOriginal || '', cls: el.className };
           g.text += el.textContent;
           groups.set(id, g);
         }
@@ -264,6 +264,12 @@ function check(name, marks, pageText, site) {
         }
         if (expected.emoji && !hit.title.includes(expected.emoji)) {
             problems.push(`${JSON.stringify(expected.original)} tooltip lacks ${expected.emoji}`);
+        }
+        if (expected.unknown && !hit.cls.includes("gg-unknown")) {
+            problems.push(`${JSON.stringify(expected.original)} should be marked unknown`);
+        }
+        if (expected.known && hit.cls.includes("gg-unknown")) {
+            problems.push(`${JSON.stringify(expected.original)} should not be unknown`);
         }
         if (expected.visible && !pageText.includes(expected.visible)) {
             const at = pageText.indexOf(expected.shown);

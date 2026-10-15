@@ -18,14 +18,20 @@
   background: rgba(46, 125, 50, 0.2);
 }
 
-.gg-approx {
+/* Unknown ingredient: original kept, red, with a "?" marker. */
+.gg-unknown {
   border-bottom-style: dotted;
-  border-bottom-color: #b26a00;
-  background: rgba(178, 106, 0, 0.08);
+  border-bottom-color: #c62828;
+  background: rgba(198, 40, 40, 0.1);
 }
 
-.gg-approx.gg-end::after {
-  color: #b26a00;
+.gg-unknown::after {
+  color: #c62828;
+}
+
+.gg-unknown.gg-end::after {
+  content: "?";
+  color: #c62828;
 }
 
 .gg-imperial {

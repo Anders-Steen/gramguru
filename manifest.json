@@ -35,7 +35,7 @@
   "permissions": ["storage"],
   "web_accessible_resources": [
     {
-      "resources": ["src/content.js", "src/convert.js", "src/data.js"],
+      "resources": ["src/content.js", "src/convert.js", "src/data.js", "src/english.js"],
       "matches": ["<all_urls>"]
     }
   ],

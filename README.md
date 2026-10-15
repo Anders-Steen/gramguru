@@ -29,14 +29,17 @@ pity. 🇺🇸)
   neve, fedd, bunt, boks** — plus imperial **oz, lb, fl oz, cup, tbsp, tsp,
   gallon, pint, quart**.
 - 🧮 Looks up real per-ingredient densities from
-  [matprat.no](https://www.matprat.no/) so `3 ss hvetemel` ≠ `3 ss sukker`.
+  [matprat.no](https://www.matprat.no/) (Norwegian) and
+  [USDA FoodData Central](https://fdc.nal.usda.gov/) (English), so
+  `3 ss hvetemel` ≠ `3 ss sukker` and `1 cup cheddar` ≠ `1 cup milk`.
 - ✳️ Marks every conversion inline with a dashed underline, a colored asterisk,
   and a one-time pulse — so you *definitely* notice something happened.
-- 🖱️ Hover (or tap) a mark to see `27 g (exact) 🧐` or `30 g (approx) 🤷 (assumed water)`.
-- 🤷 Unknown **volume** unit? It assumes water and says so (`1 dl ≈ 100 g`).
-- 🚫 Unknown **count** unit (`stk`, `pk`, `skive`, …)? It refuses to guess "1 piece = 100 g" and leaves it alone.
+- 🖱️ Hover (or tap) a mark to see e.g. `27 g (exact) 🧐`.
+- 🤷 **Unknown ingredient?** It never invents a number: it keeps the original text,
+  marks it **red** (`?`), and the tooltip gives **both** estimates —
+  `1 dl ≈ 100 g (liquid, like water) · 55 g (dry, like flour)`.
 - 🔢 Shows a count badge on the toolbar icon.
-- 🔌 **Zero network calls.** The density table is bundled. Your recipes stay
+- 🔌 **Zero network calls.** The density tables are bundled. Your recipes stay
   yours. 🕵️
 
 ## Example output
@@ -47,8 +50,9 @@ pity. 🇺🇸)
 | `1,5 dl melk` | `150 g` |
 | `0,5 ts pepper` | `1.3 g` |
 | `3 stk gulrøtter` | `270 g` |
-| `2 ss` (no ingredient → assume water) | `30 g (approx) 🤷 (assumed water)` |
-| `3 stk` (unknown piece, so: refused) | *(left as-is)* |
+| `1 cup cheddar` | `100 g` |
+| `2 ss` (unknown → kept, red `?`) | `2 ss` — tooltip: `≈ 30 g (liquid) · 18 g (dry)` |
+| `3 stk` (unknown piece) | `3 stk` (red `?`) — tooltip: `ingredient not recognised` |
 | `8 oz smør` | `226.8 g (exact) 🔪 death to imperialism` |
 
 ## Install (development)

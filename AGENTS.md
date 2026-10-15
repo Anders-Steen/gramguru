@@ -33,11 +33,13 @@ content-loader.js      Classic content script that dynamic-imports src/content.j
 content.css            Inline marker + tooltip styles.
 popup.html             Popup shell; loads src/popup.js as a module.
 src/convert.js         PURE converter (no DOM). Shared by content script + tests.
-src/data.js            Committed matprat density table (refresh: build-data.js).
+src/data.js            Committed matprat (Norwegian) density table.
+src/english.js         Committed USDA FoodData Central (English) density table.
 src/content.js         DOM glue: walk text, wrap matches, badge count.
 src/background.js      Sets the toolbar badge from the content-script count.
 src/popup.js           The one switch.
 scripts/build-data.js  Optional: fetch matprat -> src/data.js.
+scripts/build-english.js Optional: download USDA SR Legacy -> src/english.js.
 scripts/e2e.js         Headless-Firefox end-to-end test (WebDriver BiDi).
 scripts/package.js     Zip the extension -> web-ext-artifacts/.
 scripts/publish.js     AMO Submission API v5 upload + publish (JWT).
@@ -51,7 +53,8 @@ node --test tests/                  # unit + (optionally live) recipe tests
 node scripts/e2e.js                 # REAL headless-Firefox end-to-end run
 node scripts/package.js             # zip the extension (stable/listed)
 node scripts/package.js --beta      # zip a beta build (id gramguru-beta@anderss)
-node scripts/build-data.js          # optional: refresh src/data.js
+node scripts/build-data.js          # optional: refresh src/data.js (matprat)
+node scripts/build-english.js       # optional: refresh src/english.js (USDA)
 GRAMGURU_UPDATE_FIXTURES=1 node --test tests/   # refresh site fixtures
 ```
 
@@ -73,20 +76,25 @@ machine — call `node` directly).
   (recipe sites split `1,5` / `dl` / `melk` into separate `<span>`s), so
   `src/content.js` flattens each leaf block's inline text before converting and
   marks groups of spans with a shared `data-gg-id`. Keep that invariant.
-- Hover text format lives in `buildNote()` in `src/convert.js`:
-  `original = converted (exact) 🧐` (matched), `original ≈ converted (approx) 🤷
-  (assumed water)` (volume fallback), `original = converted (exact) 🔪 death to
-  imperialism` (imperial).
+- Hover text (`buildNote()` in `src/convert.js`):
+  known → `3 ss hvetemel = 27 g (exact) 🧐`; imperial → `… 🔪 death to imperialism`;
+  **unknown** → a match with `unknown: true`, `metric: ""`, and the original kept.
+  Volume units also get `estimates` `{liquid, dry}` (water vs wheat flour).
+- On the page (`src/content.js` `makeSpan()`): known → the metric value; unknown →
+  the original amount+unit, class `gg-unknown` (red dotted, `?` marker).
 - Unit handling (`unitKind()`): **count** units (stk, pk, skive, neve, fedd, bunt,
-  boks, stick) are never guessed — if the ingredient weight is unknown the match
-  is dropped. **Volume** units (l, dl, ss, ts, kopp, ...) use the water fallback.
-  **Mass** units (oz, lb) are exact constants. Ingredient capture also looks at
-  the adjacent flex/grid cell (tine.no puts amount and ingredient in separate
-  cells) and falls back to compound-word suffix matching (lettmelk → melk).
+  boks, stick) are never guessed. **Volume** units (l, dl, ss, ts, kopp, ...) get
+  water/flour estimates when unknown. **Mass** units (oz, lb) are exact constants.
+  Ingredient capture also looks at the adjacent flex/grid cell (tine.no puts
+  amount and ingredient in separate cells) and uses compound-word suffix matching
+  (lettmelk → melk).
+- Ingredient index = matprat (Norwegian) + curated English aliases + USDA
+  `src/english.js` (fills gaps; earlier sources win). `scripts/build-english.js`
+  downloads the ~6 MB USDA SR Legacy CSV and regenerates `src/english.js`.
 
 ## Extending the data
 
-`scripts/build-data.js` currently uses **matprat.no only**. The plan noted
+`scripts/build-data.js` uses **matprat.no only**. The plan noted
 matvaretabellen.no (`https://www.matvaretabellen.no/api/nb/foods.json`) as a
 future fallback source. If you add it, keep `src/data.js` shape stable
 (`[{ n: name, u: { unitKey: gramsPerUnit } }]`).

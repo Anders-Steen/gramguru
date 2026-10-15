@@ -15,7 +15,7 @@ test("tablespoon of flour uses ingredient density", () => {
     const m = first("3 ss hvetemel");
     assert.equal(m.grams, 27);
     assert.equal(m.metric, "27 g");
-    assert.equal(m.approximate, false);
+    assert.equal(m.unknown, false);
     assert.equal(m.ingredient, "hvetemel");
     assert.equal(m.note, "3 ss hvetemel = 27 g (exact) 🧐");
 });
@@ -42,22 +42,25 @@ test("plural with umlaut collapses back to dictionary form", () => {
     assert.equal(m.ingredient, "gulrot");
     assert.equal(m.grams, 270);
 });
-test("unknown ingredient falls back to generic and shrugs", () => {
+test("unknown volume keeps the original and offers liquid + dry estimates", () => {
     const m = first("2 ss");
-    assert.equal(m.grams, 30);
-    assert.equal(m.approximate, true);
-    assert.equal(m.note, "2 ss ≈ 30 g (approx) 🤷 (assumed water)");
+    assert.equal(m.unknown, true);
+    assert.equal(m.metric, "");
+    assert.equal(m.original, "2 ss");
+    assert.equal(m.note, "2 ss ≈ 30 g (liquid, like water) · 18 g (dry, like flour)");
 });
-test("count units of unknown origin are not guessed", () => {
-  assert.equal(convertText("3 stk").length, 0);
-  assert.equal(convertText("1 pk aspik").length, 0);
-  assert.equal(convertText("2 skiver").length, 0);
+test("count units of unknown origin are marked unknown, not guessed", () => {
+    const m = first("3 stk");
+    assert.equal(m.unknown, true);
+    assert.equal(m.grams, null);
+    assert.equal(m.original, "3 stk");
+    assert.equal(m.note, "3 stk — ingredient not recognised 🤷");
 });
 
 test("count units with a known ingredient convert exactly", () => {
   const m = first("6 stk egg");
   assert.equal(m.grams, 330);
-  assert.equal(m.approximate, false);
+  assert.equal(m.unknown, false);
 });
 
 test("adjacent-cell ingredient hint resolves a count unit", () => {

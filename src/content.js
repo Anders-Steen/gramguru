@@ -62,15 +62,16 @@ function makeSpan(match, id) {
     span.className =
         MARK +
             " gg-end" +
-            (match.approximate ? " gg-approx" : "") +
-            (match.imperial ? " gg-imperial" : "");
+            (match.unknown ? " gg-unknown" : "") +
+            (match.imperial && !match.unknown ? " gg-imperial" : "");
     span.dataset.ggId = id;
-    span.dataset.gg = match.metric;
+    span.dataset.gg = match.unknown ? "" : match.metric;
     span.dataset.ggOriginal = match.text.trim();
     span.dataset.ggTip = match.note;
     span.title = match.note;
     span.setAttribute("aria-label", match.note);
-    span.textContent = match.metric;
+    // Unknown ingredient: keep the original amount+unit on the page (red, "?").
+    span.textContent = match.unknown ? match.original : match.metric;
     return span;
 }
 // Native title tooltips never appear on touch (Android). Show a tap-friendly
