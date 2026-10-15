@@ -7,7 +7,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 
@@ -40,7 +40,7 @@ function inline(file: string): void {
 
   src = src.replace(IMPORT_RE, "");
   src = src.replace(/^export\s+/gm, "");
-  chunks.push(`// ---- ${abs.replace(root + "/", "")} ----\n${src.trim()}\n`);
+  chunks.push(`// ---- ${relative(root, abs)} ----\n${src.trim()}\n`);
 }
 
 inline(entry);
