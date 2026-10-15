@@ -1,6 +1,6 @@
-/* GramGuru markings. The asterisk is the point: you WILL notice it. */
+/* GramGuru markings. The emoji badge is the point: you WILL notice it.
+   We never add underlines — only a background tint + the badge. */
 .gg {
-  border-bottom: 1.5px dashed #2e7d32;
   cursor: help;
   background: rgba(46, 125, 50, 0.08);
   animation: gg-pulse 1.1s ease-out 1;
@@ -19,15 +19,10 @@
   background: rgba(46, 125, 50, 0.2);
 }
 
-/* Unknown ingredient: no underline of our own (keeps the page's own styling),
-   just a light red tint and the 🤷 marker. */
+/* Unknown ingredient: just a light red tint and the 🤷 marker. We never add a
+   border/underline — it fights the page's own styling. */
 .gg-unknown {
-  border-bottom: none;
   background: rgba(198, 40, 40, 0.1);
-}
-
-.gg-imperial {
-  border-bottom-color: #c62828;
 }
 
 .gg {

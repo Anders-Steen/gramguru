@@ -32,8 +32,9 @@ pity. 🇺🇸)
   [matprat.no](https://www.matprat.no/) (Norwegian) and
   [USDA FoodData Central](https://fdc.nal.usda.gov/) (English), so
   `3 ss hvetemel` ≠ `3 ss sukker` and `1 cup cheddar` ≠ `1 cup milk`.
-- 🧐 Marks every conversion inline with a dashed underline, a one-time pulse, and
-  an emoji badge that matches the tooltip: **🧐** exact · **🔪** imperial · **🤷** unknown.
+- 🧐 Marks every conversion inline with a subtle background tint, a one-time pulse,
+  and an emoji badge that matches the tooltip: **🧐** exact · **🔪** imperial · **🤷** unknown.
+  (No added underline — we don't fight the page's own styling.)
 - 🖱️ Hover (or tap) a mark to see e.g. `27 g (exact) 🧐`.
 - 🤷 **Unknown ingredient?** It never invents a single number: it shows **both**
   estimates inline — `30 g liq / 18 g dry 🤷` — and the tooltip spells it out:
