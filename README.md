@@ -11,7 +11,7 @@ Converts Norwegian recipe units to **grams**. That's it. That's the whole idea.
 `3 ss hvetemel` ➜ `27 g` · `1,5 dl melk` ➜ `150 g` · `6 stk egg` ➜ `330 g`
 
 It also drags imperial units, kicking and screaming, into the metric age:
-`8 oz smør` ➜ `226.8 g 🔪 death to imperialism`.
+`8 oz smør` ➜ `226.8 g 🔪`.
 
 ## Why grams? 📏
 
@@ -55,7 +55,17 @@ pity. 🇺🇸)
 | `1 cup cheddar`         | `100 g`                                                       |
 | `2 ss` (unknown)        | `30/18 g wet/dry` 🤷 — tooltip: `30 g if wet` / `18 g if dry` |
 | `3 stk` (unknown piece) | `3 stk` 🤷 — tooltip: `ingredient not recognised`             |
-| `8 oz smør`             | `226.8 g (exact) 🔪 death to imperialism`                     |
+| `8 oz smør`             | `226.8 g (exact) 🔪`                                          |
+
+## Screenshots
+
+On [matprat.no](https://www.matprat.no/) — Norwegian units become grams, right on the page:
+
+![GramGuru on matprat.no](screenshots/gramguru-3-matprat.png)
+
+On a US recipe — cups and ounces become grams (unknowns fall back to wet/dry):
+
+![GramGuru on a US recipe](screenshots/gramguru-5-international.png)
 
 ## Install (development)
 
