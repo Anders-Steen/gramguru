@@ -455,8 +455,8 @@ function buildNote(args) {
     const raw = args.rawText.trim();
     if (args.unknown) {
         if (args.estimates) {
-            const dry = args.estimates.dry ? ` · ${args.estimates.dry} (dry, like flour)` : "";
-            return `${raw} ≈ ${args.estimates.liquid} (liquid, like water)${dry} ${args.marker}`;
+            const dry = args.estimates.dry ? ` or ${args.estimates.dry} dry` : "";
+            return `${raw} ≈ ${args.estimates.liquid} liquid${dry} ${args.marker}`;
         }
         return `${raw} — ingredient not recognised ${args.marker}`;
     }

@@ -22,7 +22,7 @@ const SITES = [
             { original: "3 ss hvetemel", shown: "27 g", emoji: "🧐", visible: "27 g hvetemel" },
             { original: "1,5 dl melk", shown: "150 g", visible: "150 g melk" },
             { original: "3 stk gulrøtter", shown: "270 g", visible: "270 g gulrøtter" },
-            { original: "2 ss", shown: "2 ss", unknown: true },
+            { original: "2 ss", shown: "30 g liq / 18 g dry", unknown: true },
             { original: "8 oz smør", shown: "226.8 g", emoji: "🔪", visible: "226.8 g smør" },
         ],
         minMarks: 10,
@@ -84,7 +84,7 @@ const SITES = [
     {
         name: "trinesmatblogg kyllinggryte",
         url: "https://trinesmatblogg.no/recipe/kremet-kyllinggryte-med-gnocchi-og-soltorkede-tomater/",
-        expect: [{ original: "1 ½ liter", shown: "1 ½ liter", unknown: true }],
+        expect: [{ original: "1 ½ liter", shown: "1.5 kg liq / 825 g dry", unknown: true }],
         minMarks: 4,
     },
     // International sites (US/UK units)
@@ -98,7 +98,7 @@ const SITES = [
         name: "bon appetit cookies",
         url: "https://www.bonappetit.com/recipe/bas-best-chocolate-chip-cookies",
         // This recipe states grams in parentheses, so little should convert.
-        expect: [{ original: "3 Tbsp.", shown: "3 Tbsp.", unknown: true }],
+        expect: [{ original: "3 Tbsp.", shown: "45 g liq / 27 g dry", unknown: true }],
         minMarks: 1,
     },
     {

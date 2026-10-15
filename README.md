@@ -35,9 +35,9 @@ pity. 🇺🇸)
 - 🧐 Marks every conversion inline with a dashed underline, a one-time pulse, and
   an emoji badge that matches the tooltip: **🧐** exact · **🔪** imperial · **🤷** unknown.
 - 🖱️ Hover (or tap) a mark to see e.g. `27 g (exact) 🧐`.
-- 🤷 **Unknown ingredient?** It never invents a number: it keeps the original text,
-  marks it **red** (🤷), and the tooltip gives **both** estimates —
-  `1 dl ≈ 100 g (liquid, like water) · 55 g (dry, like flour) 🤷`.
+- 🤷 **Unknown ingredient?** It never invents a single number: it shows **both**
+  estimates inline — `30 g liq / 18 g dry 🤷` — and the tooltip spells it out:
+  `2 ss ≈ 30 g liquid or 18 g dry 🤷`. (Unknown *count* units keep the original.)
 - 🔢 Shows a count badge on the toolbar icon.
 - 🔌 **Zero network calls.** The density tables are bundled. Your recipes stay
   yours. 🕵️
@@ -51,8 +51,8 @@ pity. 🇺🇸)
 | `0,5 ts pepper` | `1.3 g` |
 | `3 stk gulrøtter` | `270 g` |
 | `1 cup cheddar` | `100 g` |
-| `2 ss` (unknown → kept, red `?`) | `2 ss` — tooltip: `≈ 30 g (liquid) · 18 g (dry)` |
-| `3 stk` (unknown piece) | `3 stk` (red `?`) — tooltip: `ingredient not recognised` |
+| `2 ss` (unknown) | `30 g liq / 18 g dry` 🤷 — tooltip: `2 ss ≈ 30 g liquid or 18 g dry` |
+| `3 stk` (unknown piece) | `3 stk` 🤷 — tooltip: `ingredient not recognised` |
 | `8 oz smør` | `226.8 g (exact) 🔪 death to imperialism` |
 
 ## Install (development)

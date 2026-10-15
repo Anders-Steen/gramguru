@@ -19,10 +19,10 @@
   background: rgba(46, 125, 50, 0.2);
 }
 
-/* Unknown ingredient: original kept, red dotted. */
+/* Unknown ingredient: no underline of our own (keeps the page's own styling),
+   just a light red tint and the 🤷 marker. */
 .gg-unknown {
-  border-bottom-style: dotted;
-  border-bottom-color: #c62828;
+  border-bottom: none;
   background: rgba(198, 40, 40, 0.1);
 }
 

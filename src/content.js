@@ -71,8 +71,15 @@ function makeSpan(match, id) {
     span.dataset.ggTip = match.note;
     span.title = match.note;
     span.setAttribute("aria-label", match.note);
-    // Unknown ingredient: keep the original amount+unit on the page (red, "?").
-    span.textContent = match.unknown ? match.original : match.metric;
+    // Unknown volume: show both estimates inline, e.g. "30 g liq / 18 g dry".
+    // Unknown count: keep the original amount+unit.
+    if (match.unknown && match.estimates) {
+        const dry = match.estimates.dry ? ` / ${match.estimates.dry} dry` : "";
+        span.textContent = `${match.estimates.liquid} liq${dry}`;
+    }
+    else {
+        span.textContent = match.unknown ? match.original : match.metric;
+    }
     return span;
 }
 // Native title tooltips never appear on touch (Android). Show a tap-friendly
