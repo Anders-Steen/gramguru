@@ -103,7 +103,9 @@ Full guide: <https://extensionworkshop.com/documentation/publish/submitting-an-a
 
 GramGuru has no analytics, no telemetry, and makes no network requests at
 runtime. The ingredient densities ship inside the extension, sourced from
-matprat.no. See the source; it's small. 🔍
+matprat.no. The manifest declares this honestly:
+`browser_specific_settings.gecko.data_collection_permissions.required = ["none"]`
+(required by AMO for all new extensions). See the source; it's small. 🔍
 
 ## License
 
