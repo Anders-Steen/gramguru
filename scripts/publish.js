@@ -54,7 +54,7 @@ function makeJwt(key, secret) {
     const signature = base64url(createHmac("sha256", secret).update(`${header}.${payload}`).digest());
     return `${header}.${payload}.${signature}`;
 }
-const auth = (token) => ({ Authorization: `JWT ${token}` });
+const freshAuth = () => ({ Authorization: `JWT ${makeJwt(process.env.AMO_API_KEY, process.env.AMO_API_SECRET)}` });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function upload(token, file) {
     const form = new FormData();
@@ -62,7 +62,7 @@ async function upload(token, file) {
     form.append("channel", channel);
     const res = await fetch(`${API}/addons/upload/`, {
         method: "POST",
-        headers: auth(token),
+        headers: freshAuth(),
         body: form,
     });
     if (!res.ok)
@@ -73,7 +73,7 @@ async function upload(token, file) {
 }
 async function waitForValidation(token, uuid) {
     for (let attempt = 0; attempt < 60; attempt++) {
-        const res = await fetch(`${API}/addons/upload/${uuid}/`, { headers: auth(token) });
+        const res = await fetch(`${API}/addons/upload/${uuid}/`, { headers: freshAuth() });
         if (!res.ok)
             throw new Error(`poll failed: ${res.status}`);
         const data = (await res.json());
@@ -90,7 +90,7 @@ async function waitForValidation(token, uuid) {
 }
 async function addonExists(token, addonId) {
     const res = await fetch(`${API}/addons/addon/${encodeURIComponent(addonId)}/`, {
-        headers: auth(token),
+        headers: freshAuth(),
     });
     if (res.status === 404)
         return false;
@@ -105,7 +105,7 @@ async function createAddon(token, uuid) {
     };
     const res = await fetch(`${API}/addons/addon/`, {
         method: "POST",
-        headers: { ...auth(token), "Content-Type": "application/json" },
+        headers: { ...freshAuth(), "Content-Type": "application/json" },
         body: JSON.stringify(body),
     });
     if (!res.ok)
@@ -115,7 +115,7 @@ async function createAddon(token, uuid) {
 async function createVersion(token, addonId, uuid) {
     const res = await fetch(`${API}/addons/addon/${encodeURIComponent(addonId)}/versions/`, {
         method: "POST",
-        headers: { ...auth(token), "Content-Type": "application/json" },
+        headers: { ...freshAuth(), "Content-Type": "application/json" },
         body: JSON.stringify({ upload: uuid }),
     });
     if (!res.ok)
@@ -130,7 +130,7 @@ async function waitForSigned(token, addonId, version, initialUrl) {
         if (url && url.endsWith(".xpi"))
             return url;
         await sleep(5000);
-        const res = await fetch(`${API}/addons/addon/${encodeURIComponent(addonId)}/versions/${encodeURIComponent(version)}/`, { headers: auth(token) });
+        const res = await fetch(`${API}/addons/addon/${encodeURIComponent(addonId)}/versions/${encodeURIComponent(version)}/`, { headers: freshAuth() });
         if (res.ok) {
             const v = (await res.json());
             url = v.file?.url ?? url;
@@ -146,7 +146,7 @@ async function waitForSigned(token, addonId, version, initialUrl) {
 async function downloadSigned(url, version, token) {
     // The AMO download link for an unlisted add-on requires auth (it's the
     // developer copy), so send the JWT.
-    const res = await fetch(url, { headers: auth(token) });
+    const res = await fetch(url, { headers: freshAuth() });
     if (!res.ok)
         throw new Error(`download failed: ${res.status}`);
     const dir = join(root, "beta");
