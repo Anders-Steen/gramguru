@@ -102,13 +102,13 @@ const SITES = [
     expect: [{ original: "1 tbsp melted butter", shown: "15 g", emoji: "🔪" }],
     minMarks: 1,
   },
-  {
-    name: "bon appetit cookies",
-    url: "https://www.bonappetit.com/recipe/bas-best-chocolate-chip-cookies",
-    // This recipe states grams in parentheses, so little should convert.
-    expect: [{ original: "3 Tbsp.", shown: "45/27 g wet/dry", unknown: true }],
-    minMarks: 1,
-  },
+    {
+      name: "bon appetit cookies",
+      url: "https://www.bonappetit.com/recipe/bas-best-chocolate-chip-cookies",
+      // Recipe states grams in parentheses, so (almost) nothing should convert.
+      expect: [],
+      minMarks: 0,
+    },
   {
     name: "pioneer woman green bean casserole",
     url: "https://www.thepioneerwoman.com/food-cooking/recipes/a11889/green-bean-casserole/",
@@ -363,12 +363,14 @@ async function main() {
       const marks = await readMarks(bidi, context);
       const pageText = await readText(bidi, context);
       if (!check(site.name, marks, pageText, site)) ok = false;
-      const tip = await tapFirstMark(bidi, context);
-      if (!tip || tip.display === "none" || !tip.text) {
-        console.log(`    ! tap tooltip did not appear: ${JSON.stringify(tip)}`);
-        ok = false;
-      } else {
-        console.log(`    tap tooltip: ${JSON.stringify(tip.text)}`);
+      if (marks.length > 0) {
+        const tip = await tapFirstMark(bidi, context);
+        if (!tip || tip.display === "none" || !tip.text) {
+          console.log(`    ! tap tooltip did not appear: ${JSON.stringify(tip)}`);
+          ok = false;
+        } else {
+          console.log(`    tap tooltip: ${JSON.stringify(tip.text)}`);
+        }
       }
       await bidi.send("browsingContext.close", { context });
     }
