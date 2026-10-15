@@ -14,6 +14,7 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } f
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
+import { UPDATES_URL } from "./repo.js";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const manifest = JSON.parse(readFileSync(join(root, "manifest.json"), "utf8"));
@@ -45,9 +46,7 @@ if (!beta) {
   // Self-distributed add-ons only auto-update via an HTTPS update manifest.
   // Firefox keeps using the update_url of the installed version, so it must be
   // present from the very first beta build.
-  const BETA_UPDATE_URL =
-    process.env.BETA_UPDATE_URL ??
-    "https://raw.githubusercontent.com/Anders-Steen/gramguru/main/updates.json";
+  const BETA_UPDATE_URL = process.env.BETA_UPDATE_URL ?? UPDATES_URL;
   const staging = mkdtempSync(join(tmpdir(), "gramguru-beta-"));
   try {
     for (const file of runtimeFiles) {

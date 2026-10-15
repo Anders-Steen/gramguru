@@ -17,12 +17,11 @@ import { createHmac, randomBytes } from "node:crypto";
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { basename, join } from "node:path";
+import { REPO_RAW_BASE } from "./repo.js";
 const API = "https://addons.mozilla.org/api/v5";
 const root = fileURLToPath(new URL("..", import.meta.url));
 // Self-distributed add-ons aren't hosted on AMO, so the signed XPI is committed
-// under beta/ and served over HTTPS from the public repo.
-const REPO_RAW_BASE =
-  process.env.REPO_RAW_BASE ?? "https://raw.githubusercontent.com/Anders-Steen/gramguru/main";
+// under beta/ and served over HTTPS from the public repo (see scripts/repo.js).
 const MANIFEST = JSON.parse(readFileSync(join(root, "manifest.json"), "utf8"));
 const LISTING = {
   slug: process.env.AMO_SLUG ?? "gramguru",

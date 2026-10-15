@@ -102,13 +102,13 @@ const SITES = [
     expect: [{ original: "1 tbsp melted butter", shown: "15 g", emoji: "🔪" }],
     minMarks: 1,
   },
-    {
-      name: "bon appetit cookies",
-      url: "https://www.bonappetit.com/recipe/bas-best-chocolate-chip-cookies",
-      // Recipe states grams in parentheses, so (almost) nothing should convert.
-      expect: [],
-      minMarks: 0,
-    },
+  {
+    name: "bon appetit cookies",
+    url: "https://www.bonappetit.com/recipe/bas-best-chocolate-chip-cookies",
+    // Recipe states grams in parentheses, so (almost) nothing should convert.
+    expect: [],
+    minMarks: 0,
+  },
   {
     name: "pioneer woman green bean casserole",
     url: "https://www.thepioneerwoman.com/food-cooking/recipes/a11889/green-bean-casserole/",

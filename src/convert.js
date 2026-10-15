@@ -410,6 +410,7 @@ export function convertText(text, fallbackIngredient = "") {
     }
     const original = text.slice(m.index, unitEnd);
     const metric = unknown ? "" : formatGrams(grams);
+    const display = inlineText({ unknown, estimates, original, metric });
     const imperial = Boolean(def.imperial);
     // One emoji, used in both the tooltip and the inline marker.
     const marker = unknown ? "🤷" : imperial ? "🔪" : "🧐";
@@ -422,6 +423,7 @@ export function convertText(text, fallbackIngredient = "") {
       original,
       grams,
       metric,
+      display,
       quantity,
       unitKey: def.key,
       ingredient: ingredientName,
@@ -434,6 +436,17 @@ export function convertText(text, fallbackIngredient = "") {
     MATCH_RE.lastIndex = end;
   }
   return matches;
+}
+// What the mark shows on the page: the metric value, or — for an unknown
+// ingredient — the "X/Y g wet/dry" estimates, or the original amount for an
+// unknown count unit. Single source of truth for the inline text.
+function inlineText({ unknown, estimates, original, metric }) {
+  if (!unknown) return metric;
+  if (estimates)
+    return estimates.dry
+      ? `${estimates.liquid}/${estimates.dry} g wet/dry`
+      : `${estimates.liquid} g`;
+  return original;
 }
 function buildNote(args) {
   const raw = args.rawText.trim();

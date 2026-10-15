@@ -78,10 +78,10 @@ function collectLeafBlocks(root, out) {
   }
   for (const child of blockChildren) collectLeafBlocks(child, out);
 }
-// One span per conversion. It shows the metric value, or — for an unknown
-// ingredient — the "wet/dry" estimates ("30/18 g wet/dry"), or the original
-// amount for count units. The full note lives in the tooltip (title +
-// data-gg-tip); the matched original is kept in data-gg-original.
+// One span per conversion. The visible text is `match.display` (built by
+// convert.js): the metric value, the "X/Y g wet/dry" estimates, or the original
+// amount. The full note lives in the tooltip (title + data-gg-tip); the matched
+// original is kept in data-gg-original.
 function makeSpan(match, id) {
   const span = document.createElement("span");
   span.className =
@@ -94,13 +94,7 @@ function makeSpan(match, id) {
   span.dataset.ggOriginal = match.text.trim();
   span.dataset.ggTip = match.note;
   span.title = match.note;
-  if (match.unknown && match.estimates) {
-    span.textContent = match.estimates.dry
-      ? `${match.estimates.liquid}/${match.estimates.dry} g wet/dry`
-      : `${match.estimates.liquid} g`;
-  } else {
-    span.textContent = match.unknown ? match.original : match.metric;
-  }
+  span.textContent = match.display;
   return span;
 }
 // Native title tooltips never appear on touch (Android). Show a tap-friendly
