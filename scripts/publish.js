@@ -122,6 +122,27 @@ async function createVersion(token, addonId, uuid) {
         throw new Error(`version creation failed: ${res.status} ${await res.text()}`);
     return (await res.json());
 }
+// Unlisted signing is async: file.status goes unreviewed -> public and the
+// url switches from .zip to .xpi. Wait for the signed .xpi before downloading.
+async function waitForSigned(token, addonId, version, initialUrl) {
+    let url = initialUrl;
+    for (let i = 0; i < 40; i++) {
+        if (url && url.endsWith(".xpi"))
+            return url;
+        await sleep(5000);
+        const res = await fetch(`${API}/addons/addon/${encodeURIComponent(addonId)}/versions/${encodeURIComponent(version)}/`, { headers: auth(token) });
+        if (res.ok) {
+            const v = (await res.json());
+            url = v.file?.url ?? url;
+            if (v.file?.status === "public" && url.endsWith(".xpi"))
+                return url;
+        }
+        else {
+            console.log(`  waiting for signing ... (${res.status})`);
+        }
+    }
+    throw new Error("timed out waiting for the signed XPI");
+}
 async function downloadSigned(url, version, token) {
     // The AMO download link for an unlisted add-on requires auth (it's the
     // developer copy), so send the JWT.
@@ -182,9 +203,10 @@ async function main() {
     if (channel === "listed") {
         console.log("submitted for review. Track status in the Developer Hub.");
     }
-    else if (version.file?.url) {
+    else {
         const ver = version.version ?? MANIFEST.version;
-        const signedPath = await downloadSigned(version.file.url, ver, token);
+        const signedUrl = await waitForSigned(token, addonId, ver, version.file?.url);
+        const signedPath = await downloadSigned(signedUrl, ver, token);
         const updateLink = `${REPO_RAW_BASE}/beta/${basename(signedPath)}`;
         recordUpdate(addonId, ver, updateLink);
         console.log(`update_link -> ${updateLink}`);

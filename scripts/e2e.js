@@ -19,11 +19,11 @@ const SITES = [
         name: "testpage.html",
         url: null,
         expect: [
-            { original: "3 ss hvetemel", shown: "27 g", emoji: "🧐" },
-            { original: "1,5 dl melk", shown: "150 g" },
-            { original: "3 stk gulrøtter", shown: "270 g" },
+            { original: "3 ss hvetemel", shown: "27 g", emoji: "🧐", visible: "27 g hvetemel" },
+            { original: "1,5 dl melk", shown: "150 g", visible: "150 g melk" },
+            { original: "3 stk gulrøtter", shown: "270 g", visible: "270 g gulrøtter" },
             { original: "2 ss", shown: "30 g", emoji: "🤷" },
-            { original: "8 oz smør", shown: "226.8 g", emoji: "🔪" },
+            { original: "8 oz smør", shown: "226.8 g", emoji: "🔪", visible: "226.8 g smør" },
         ],
         minMarks: 10,
     },
@@ -31,9 +31,9 @@ const SITES = [
         name: "matprat leverpostei",
         url: "https://www.matprat.no/oppskrifter/tradisjon/leverpostei/",
         expect: [
-            { original: "3 ss hvetemel", shown: "27 g" },
-            { original: "1,5 dl melk", shown: "150 g" },
-            { original: "1 pk aspik", shown: "400 g", emoji: "🤷" },
+            { original: "3 ss hvetemel", shown: "27 g", visible: "27 g hvetemel" },
+            { original: "1,5 dl melk", shown: "150 g", visible: "150 g melk" },
+            { original: "1 pk aspik", shown: "400 g", emoji: "🤷", visible: "400 g aspik" },
         ],
         minMarks: 10,
     },
@@ -41,11 +41,22 @@ const SITES = [
         name: "meny helstekt kylling",
         url: "https://meny.no/oppskrifter/kylling/helstekt-kylling-med-ovnsbakte-rotgronnsaker",
         expect: [
-            { original: "2 dl hvitvin", shown: "200 g" },
-            { original: "3 dl kyllingkraft", shown: "300 g" },
-            { original: "1 stk hel kylling", shown: "1.5 kg" },
+            { original: "2 dl hvitvin", shown: "200 g", visible: "200 g hvitvin" },
+            { original: "3 dl kyllingkraft", shown: "300 g", visible: "300 g kyllingkraft" },
+            { original: "1 stk hel kylling", shown: "1.5 kg", visible: "1.5 kg hel kylling" },
         ],
         minMarks: 11,
+    },
+    {
+        name: "matprat bigos",
+        url: "https://www.matprat.no/oppskrifter/gjester/bigos-polsk-gryte/",
+        expect: [
+            { original: "2 ss smør", shown: "30 g", visible: "30 g smør" },
+            { original: "3 stk. løk", shown: "510 g", visible: "510 g løk" },
+            { original: "5 dl kjøttkraft", shown: "500 g", visible: "500 g kjøttkraft" },
+            { original: "0,5 ts salt", shown: "3.5 g", visible: "3.5 g salt" },
+        ],
+        minMarks: 9,
     },
 ];
 class Bidi {
@@ -148,7 +159,11 @@ async function readMarks(bidi, context) {
     }
     return [];
 }
-function check(name, marks, site) {
+async function readText(bidi, context) {
+    const raw = await evaluate(bidi, context, `document.body ? document.body.innerText.replace(/\\s+/g, ' ').trim() : ''`);
+    return typeof raw === "string" ? raw : "";
+}
+function check(name, marks, pageText, site) {
     const problems = [];
     if (marks.length < site.minMarks) {
         problems.push(`expected >= ${site.minMarks} marks, got ${marks.length}`);
@@ -164,6 +179,9 @@ function check(name, marks, site) {
         }
         if (expected.emoji && !hit.title.includes(expected.emoji)) {
             problems.push(`${JSON.stringify(expected.original)} tooltip lacks ${expected.emoji}`);
+        }
+        if (expected.visible && !pageText.includes(expected.visible)) {
+            problems.push(`page text lacks the ingredient: expected ${JSON.stringify(expected.visible)}`);
         }
     }
     const ok = problems.length === 0;
@@ -200,7 +218,8 @@ async function main() {
                 wait: "complete",
             });
             const marks = await readMarks(bidi, context);
-            if (!check(site.name, marks, site))
+            const pageText = await readText(bidi, context);
+            if (!check(site.name, marks, pageText, site))
                 ok = false;
             await bidi.send("browsingContext.close", { context });
         }

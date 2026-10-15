@@ -105,11 +105,13 @@ function annotateBlock(block) {
     for (const match of matches) {
         const id = `${block.tagName}#${markSeq++}`;
         let first = true;
+        // Only the amount+unit is replaced; the ingredient phrase (after
+        // unitEnd) is left in place, so the page reads e.g. "27 g hvetemel".
         for (const entry of map) {
-            if (entry.start >= match.end || entry.end <= match.start)
+            if (entry.start >= match.unitEnd || entry.end <= match.start)
                 continue;
             const from = Math.max(match.start, entry.start) - entry.start;
-            const to = Math.min(match.end, entry.end) - entry.start;
+            const to = Math.min(match.unitEnd, entry.end) - entry.start;
             const list = portions.get(entry.node) ?? [];
             list.push({ from, to, match, id, show: first });
             portions.set(entry.node, list);

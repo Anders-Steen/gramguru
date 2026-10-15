@@ -244,7 +244,9 @@ export function convertText(text) {
         const after = text.slice(m.index + m[0].length);
         const ingredientMatch = after.match(INGREDIENT_RE);
         let ingredientPhrase = ingredientMatch ? ingredientMatch[1] : "";
-        let end = m.index + m[0].length;
+        // Where the amount+unit part ends and the ingredient phrase (if any) begins.
+        const unitEnd = m.index + m[0].length;
+        let end = unitEnd;
         if (ingredientMatch)
             end += ingredientMatch[0].length;
         const found = lookupIngredient(ingredientPhrase) ?? lookupIngredient(stripDescriptors(ingredientPhrase));
@@ -270,6 +272,7 @@ export function convertText(text) {
         });
         matches.push({
             start: m.index,
+            unitEnd,
             end,
             text: text.slice(m.index, end),
             grams,
