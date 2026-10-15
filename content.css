@@ -38,6 +38,27 @@
   color: #c62828;
 }
 
+.gg {
+  touch-action: manipulation;
+}
+
+/* Tap-friendly tooltip (native title never shows on touch/Android). */
+#gg-tip {
+  position: fixed;
+  z-index: 2147483647;
+  display: none;
+  max-width: min(320px, 90vw);
+  padding: 6px 9px;
+  border-radius: 6px;
+  background: #1b1b1b;
+  color: #fff;
+  font: 12px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  white-space: normal;
+  word-break: break-word;
+}
+
 @keyframes gg-pulse {
   from {
     background: rgba(46, 125, 50, 0.45);

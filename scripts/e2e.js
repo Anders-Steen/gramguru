@@ -163,6 +163,18 @@ async function readText(bidi, context) {
     const raw = await evaluate(bidi, context, `document.body ? document.body.innerText.replace(/\\s+/g, ' ').trim() : ''`);
     return typeof raw === "string" ? raw : "";
 }
+// Simulate a tap/click on the first mark and check the floating tooltip shows.
+async function tapFirstMark(bidi, context) {
+    const raw = await evaluate(bidi, context, `(() => {
+        const el = document.querySelector('.gg');
+        if (!el) return JSON.stringify(null);
+        el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+        const tip = document.getElementById('gg-tip');
+        if (!tip) return JSON.stringify(null);
+        return JSON.stringify({ display: getComputedStyle(tip).display, text: tip.textContent });
+    })()`);
+    return typeof raw === "string" ? JSON.parse(raw) : null;
+}
 function check(name, marks, pageText, site) {
     const problems = [];
     if (marks.length < site.minMarks) {
@@ -221,6 +233,14 @@ async function main() {
             const pageText = await readText(bidi, context);
             if (!check(site.name, marks, pageText, site))
                 ok = false;
+            const tip = await tapFirstMark(bidi, context);
+            if (!tip || tip.display === "none" || !tip.text) {
+                console.log(`    ! tap tooltip did not appear: ${JSON.stringify(tip)}`);
+                ok = false;
+            }
+            else {
+                console.log(`    tap tooltip: ${JSON.stringify(tip.text)}`);
+            }
             await bidi.send("browsingContext.close", { context });
         }
         bidi.close();

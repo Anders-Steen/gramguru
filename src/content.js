@@ -39,12 +39,12 @@ function isSkipped(node) {
         return true;
     if (SKIP_TAGS.has(parent.tagName))
         return true;
-    if (parent.closest("." + MARK))
+    if (parent.closest("." + MARK) || parent.closest("#gg-tip"))
         return true;
     return parent.isContentEditable;
 }
 function collectLeafBlocks(root, out) {
-    if (SKIP_TAGS.has(root.tagName))
+    if (SKIP_TAGS.has(root.tagName) || root.id === "gg-tip")
         return;
     const blockChildren = Array.from(root.children).filter((child) => !INLINE.has(child.tagName));
     if (blockChildren.length === 0) {
@@ -67,10 +67,58 @@ function makeSpan(match, id) {
     span.dataset.ggId = id;
     span.dataset.gg = match.metric;
     span.dataset.ggOriginal = match.text.trim();
+    span.dataset.ggTip = match.note;
     span.title = match.note;
     span.setAttribute("aria-label", match.note);
     span.textContent = match.metric;
     return span;
+}
+// Native title tooltips never appear on touch (Android). Show a tap-friendly
+// floating tooltip instead, and use it for hover too so desktop is consistent.
+let tipEl = null;
+function ensureTip() {
+    if (tipEl && tipEl.isConnected)
+        return tipEl;
+    tipEl = document.createElement("div");
+    tipEl.id = "gg-tip";
+    tipEl.setAttribute("role", "tooltip");
+    document.documentElement.appendChild(tipEl);
+    return tipEl;
+}
+function showTip(target) {
+    const note = target.dataset.ggTip || target.getAttribute("aria-label") || "";
+    if (!note)
+        return;
+    const tip = ensureTip();
+    tip.textContent = note;
+    tip.style.display = "block";
+    const rect = target.getBoundingClientRect();
+    const tipRect = tip.getBoundingClientRect();
+    let top = rect.top - tipRect.height - 8;
+    if (top < 4)
+        top = rect.bottom + 8;
+    let left = rect.left + rect.width / 2 - tipRect.width / 2;
+    left = Math.max(4, Math.min(left, window.innerWidth - tipRect.width - 4));
+    tip.style.top = `${Math.round(top)}px`;
+    tip.style.left = `${Math.round(left)}px`;
+}
+function hideTip() {
+    if (tipEl)
+        tipEl.style.display = "none";
+}
+function onTipClick(event) {
+    const target = event.target instanceof Element ? event.target.closest("." + MARK) : null;
+    if (target && target.dataset.ggTip)
+        showTip(target);
+    else
+        hideTip();
+}
+function onTipOver(event) {
+    const target = event.target instanceof Element ? event.target.closest("." + MARK) : null;
+    if (target && target.dataset.ggTip)
+        showTip(target);
+    else
+        hideTip();
 }
 function annotateBlock(block) {
     const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
@@ -179,10 +227,21 @@ function start() {
             schedule();
     });
     observer.observe(document.body, { childList: true, subtree: true });
+    document.addEventListener("click", onTipClick, true);
+    document.addEventListener("mouseover", onTipOver, true);
+    document.addEventListener("scroll", hideTip, true);
+    window.addEventListener("resize", hideTip);
+    window.addEventListener("touchmove", hideTip, { passive: true });
 }
 function stop() {
     observer?.disconnect();
     observer = null;
+    document.removeEventListener("click", onTipClick, true);
+    document.removeEventListener("mouseover", onTipOver, true);
+    document.removeEventListener("scroll", hideTip, true);
+    window.removeEventListener("resize", hideTip);
+    window.removeEventListener("touchmove", hideTip);
+    hideTip();
     for (const el of document.querySelectorAll("." + MARK)) {
         el.parentNode?.replaceChild(document.createTextNode(el.textContent ?? ""), el);
     }
