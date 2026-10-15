@@ -19,6 +19,11 @@ import { fileURLToPath } from "node:url";
 import { basename, join } from "node:path";
 const API = "https://addons.mozilla.org/api/v5";
 const root = fileURLToPath(new URL("..", import.meta.url));
+// Self-distributed add-ons aren't hosted on AMO, so the signed XPI is committed
+// under beta/ and served over HTTPS from the public repo.
+const REPO_RAW_BASE =
+    process.env.REPO_RAW_BASE ??
+        "https://raw.githubusercontent.com/Anders-Steen/gramguru/main";
 const MANIFEST = JSON.parse(readFileSync(join(root, "manifest.json"), "utf8"));
 const LISTING = {
     slug: process.env.AMO_SLUG ?? "gramguru",
@@ -117,15 +122,18 @@ async function createVersion(token, addonId, uuid) {
         throw new Error(`version creation failed: ${res.status} ${await res.text()}`);
     return (await res.json());
 }
-async function downloadSigned(url, version) {
-    const res = await fetch(url);
+async function downloadSigned(url, version, token) {
+    // The AMO download link for an unlisted add-on requires auth (it's the
+    // developer copy), so send the JWT.
+    const res = await fetch(url, { headers: auth(token) });
     if (!res.ok)
         throw new Error(`download failed: ${res.status}`);
-    const dir = join(root, "web-ext-artifacts");
+    const dir = join(root, "beta");
     mkdirSync(dir, { recursive: true });
-    const out = join(dir, `gramguru-${version}-signed.xpi`);
+    const out = join(dir, `gramguru-beta-${version}.xpi`);
     writeFileSync(out, Buffer.from(await res.arrayBuffer()));
     console.log(`signed add-on -> ${out}`);
+    return out;
 }
 // Self-distributed (unlisted) add-ons update via an HTTPS update manifest.
 // Record the freshly signed version so existing installs can find it.
@@ -176,8 +184,11 @@ async function main() {
     }
     else if (version.file?.url) {
         const ver = version.version ?? MANIFEST.version;
-        await downloadSigned(version.file.url, ver);
-        recordUpdate(addonId, ver, version.file.url);
+        const signedPath = await downloadSigned(version.file.url, ver, token);
+        const updateLink = `${REPO_RAW_BASE}/beta/${basename(signedPath)}`;
+        recordUpdate(addonId, ver, updateLink);
+        console.log(`update_link -> ${updateLink}`);
+        console.log("commit beta/ and updates.json, then push to deliver the update.");
     }
 }
 main().catch((err) => {

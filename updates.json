@@ -1,7 +1,12 @@
 {
   "addons": {
     "gramguru-beta@anderss": {
-      "updates": []
+      "updates": [
+        {
+          "version": "0.1.4",
+          "update_link": "https://raw.githubusercontent.com/Anders-Steen/gramguru/main/beta/gramguru-beta-0.1.4.xpi"
+        }
+      ]
     }
   }
 }
