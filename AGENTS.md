@@ -15,79 +15,79 @@ No runtime network access; the density table is bundled.
 
 ## Golden rules
 
-1. **No npm dependencies. Ever.** npm is broken on the dev machine and we like
-   it that way. Use Node built-ins only.
-2. **Node runs TypeScript directly.** Import with explicit `.ts` extensions in
-   source (`import { x } from "./y.ts"`); `tsc` rewrites them to `.js` on build
-   via `rewriteRelativeImportExtensions`.
-3. **No `enum` / `namespace`.** Node's type-stripping rejects them.
-4. **Keep it small.** This is the whole point of the project.
-5. **Never commit secrets.** `.env` is git-ignored.
+1. **Plain JavaScript, no build step.** The files under `src/` are exactly what
+   ships. No TypeScript, no bundler, no transpiler, no minifier. Import with
+   explicit `.js` extensions in source (`import { x } from "./y.js"`).
+2. **No npm dependencies. Ever.** Use Node built-ins only.
+3. **Keep it small.** This is the whole point of the project.
+4. **Never commit secrets.** `.env` is git-ignored.
+5. **The AMO answer is "No build tools."** Don't reintroduce anything that
+   processes source into shipped files, or this changes.
 
 ## Layout
 
 ```
 manifest.json          MV3 manifest. Name: "GramGuru 🧐".
-content.css            Inline marker + tooltip styles.
-popup.html             Popup shell; loads dist/popup.js as a module.
-src/convert.ts         PURE converter (no DOM). Shared by content script + tests.
-src/data.generated.ts  GENERATED matprat density table. Do not edit by hand.
-src/content.ts         DOM glue: walk text, wrap matches, badge count.
-src/background.ts      Sets the toolbar badge from the content-script count.
-src/popup.ts           The one switch.
-src/globals.d.ts       Minimal `browser` typings (dependency-free).
-scripts/build.ts       tsc + flatten content module into a classic dist/content.js
+content-loader.js      Classic content script that dynamic-imports src/content.js
                        (Firefox content scripts can't be ES modules directly).
-scripts/build-data.ts  Fetch matprat -> src/data.generated.ts.
-scripts/package.ts     Zip runtime files -> web-ext-artifacts/.
-scripts/publish.ts     AMO Submission API v5 upload + publish (JWT).
+content.css            Inline marker + tooltip styles.
+popup.html             Popup shell; loads src/popup.js as a module.
+src/convert.js         PURE converter (no DOM). Shared by content script + tests.
+src/data.js            Committed matprat density table (refresh: build-data.js).
+src/content.js         DOM glue: walk text, wrap matches, badge count.
+src/background.js      Sets the toolbar badge from the content-script count.
+src/popup.js           The one switch.
+scripts/build-data.js  Optional: fetch matprat -> src/data.js.
+scripts/e2e.js         Headless-Firefox end-to-end test (WebDriver BiDi).
+scripts/package.js     Zip the extension -> web-ext-artifacts/.
+scripts/publish.js     AMO Submission API v5 upload + publish (JWT).
 tests/                 node:test suites. Pure tests + live recipe-page tests.
 ```
 
 ## Commands
 
 ```bash
-node scripts/build-data.ts          # regenerate the density table
-node scripts/build.ts               # type-check + emit + bundle dist/
 node --test tests/                  # unit + (optionally live) recipe tests
-node scripts/e2e.ts                 # REAL headless-Firefox end-to-end run
+node scripts/e2e.js                 # REAL headless-Firefox end-to-end run
+node scripts/package.js             # zip the extension
+node scripts/build-data.js          # optional: refresh src/data.js
 GRAMGURU_UPDATE_FIXTURES=1 node --test tests/   # refresh site fixtures
-node scripts/package.ts             # build a zip (run build first)
 ```
 
-There is `package.json` with matching `scripts`, but **npm is broken** here — call
-`node`/`tsc` directly.
+There is a `package.json` with matching `scripts` (npm is broken on the dev
+machine — call `node` directly).
 
 ## Testing notes
 
-- `tests/convert.test.ts` — pure unit tests. Add a case for every new unit,
+- `tests/convert.test.js` — pure unit tests. Add a case for every new unit,
   plural form, or scaling rule. This is the file that keeps us honest.
-- `tests/sites.test.ts` — fetches real recipes
+- `tests/sites.test.js` — fetches real recipes
   (<https://www.matprat.no/oppskrifter/tradisjon/leverpostei/> and a meny.no
   recipe), pulls `recipeIngredient` from the page's `application/ld+json`, and
   asserts the grams. Falls back to `tests/fixtures/` when offline.
-- `scripts/e2e.ts` — the real deal. Launches headless Firefox, installs the
+- `scripts/e2e.js` — the real deal. Launches headless Firefox, installs the
   extension as a temporary add-on over WebDriver BiDi (`ws://127.0.0.1:<port>/session`),
   then asserts the injected `.gg` marks on `devtest/testpage.html` and both real
   recipe sites. The content script must match across inline-element boundaries
   (recipe sites split `1,5` / `dl` / `melk` into separate `<span>`s), so
-  `src/content.ts` flattens each leaf block's inline text before converting and
+  `src/content.js` flattens each leaf block's inline text before converting and
   marks groups of spans with a shared `data-gg-id`. Keep that invariant.
-- Hover text format lives in `buildNote()` in `src/convert.ts`:
+- Hover text format lives in `buildNote()` in `src/convert.js`:
   `original = converted (exact) 🧐` (matched), `original ≈ converted (approx) 🤷`
   (guess), `original = converted (exact) 🔪 death to imperialism` (imperial).
 
 ## Extending the data
 
-`scripts/build-data.ts` currently uses **matprat.no only**. The plan noted
+`scripts/build-data.js` currently uses **matprat.no only**. The plan noted
 matvaretabellen.no (`https://www.matvaretabellen.no/api/nb/foods.json`) as a
-future fallback source. If you add it, keep the generated output shape stable.
+future fallback source. If you add it, keep `src/data.js` shape stable
+(`[{ n: name, u: { unitKey: gramsPerUnit } }]`).
 
 ## Publishing
 
-See README "Publish to addons.mozilla.org". `scripts/publish.ts` reads
-`AMO_API_KEY`, `AMO_API_SECRET`, `AMO_ADDON_ID`. The first listing creation is a
-manual DevHub step; after that it's scripted.
+See README "Publish to addons.mozilla.org". `scripts/publish.js` reads
+`AMO_API_KEY`, `AMO_API_SECRET`, `AMO_ADDON_ID` (run with `node --env-file=.env`).
+It creates the listing if it doesn't exist yet, otherwise adds a version.
 
 ## When something is ambiguous
 

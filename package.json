@@ -7,11 +7,10 @@
   "license": "MIT",
   "keywords": ["firefox", "webextension", "metric", "grams", "recipes", "norwegian"],
   "scripts": {
-    "data": "node scripts/build-data.ts",
-    "build": "node scripts/build.ts",
     "test": "node --test tests/",
-    "e2e": "node scripts/e2e.ts",
-    "package": "tsc -p tsconfig.json && node scripts/package.ts",
-    "publish:amo": "node scripts/publish.ts"
+    "e2e": "node scripts/e2e.js",
+    "package": "node scripts/package.js",
+    "publish:amo": "node scripts/publish.js",
+    "data": "node scripts/build-data.js"
   }
 }

@@ -50,27 +50,28 @@ pity. 🇺🇸)
 
 ## Install (development)
 
-1. Build: `tsc -p tsconfig.json`
-2. Firefox ➜ `about:debugging#/runtime/this-firefox` ➜ **Load Temporary Add-on…**
-3. Pick `manifest.json` in this folder. Done. 🎉
+1. Firefox ➜ `about:debugging#/runtime/this-firefox` ➜ **Load Temporary Add-on…**
+2. Pick `manifest.json` in this folder. Done. 🎉
+
+No build step — the files that ship are the source. Plain JavaScript. 🍦
 
 ## Development
 
-No npm. No bundler. Just Node ≥ 24 (runs TypeScript directly) and `tsc`.
+No npm, no bundler, no transpiler, no TypeScript. Just Node ≥ 20 and plain ES
+modules that run as-is.
 
 ```bash
-node scripts/build-data.ts   # refresh src/data.generated.ts from matprat.no
-node scripts/build.ts        # type-check + emit + bundle dist/
 node --test tests/           # unit + (optionally live) recipe tests
-node scripts/e2e.ts          # REAL end-to-end run in headless Firefox
-node scripts/package.ts      # zip the runtime files into web-ext-artifacts/
+node scripts/e2e.js          # REAL end-to-end run in headless Firefox
+node scripts/package.js      # zip the extension into web-ext-artifacts/
+node scripts/build-data.js   # optional: refresh src/data.js from matprat.no
 ```
 
 `node --test` fetches the real recipe pages and asserts the conversions. Offline?
 It falls back to cached fixtures in `tests/fixtures/`. Refresh fixtures with
 `GRAMGURU_UPDATE_FIXTURES=1 node --test tests/`.
 
-`node scripts/e2e.ts` is the honest test: it launches headless Firefox, installs
+`node scripts/e2e.js` is the honest test: it launches headless Firefox, installs
 the extension as a temporary add-on over WebDriver BiDi (the same mechanism
 `about:debugging` uses), and checks the actually-injected marks on the local test
 kitchen plus both real recipe sites. Results are printed per site. 🧪
@@ -88,8 +89,8 @@ checks need network; the local `devtest/testpage.html` does not.
 3. Generate API keys: <https://addons.mozilla.org/developers/addon/api/key/>
 4. Export them and publish:
    ```bash
-   export AMO_API_KEY=... AMO_API_SECRET=... AMO_ADDON_ID=gramguru
-   tsc -p tsconfig.json && node scripts/package.ts && node scripts/publish.ts
+   node scripts/package.js          # or: npm run package
+   node --env-file=.env scripts/publish.js
    ```
 5. First submission gets human-reviewed, then it's live. 🧐
 

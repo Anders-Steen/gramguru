@@ -33,31 +33,30 @@ in grams (auto-scaled to mg/g/kg), with a cheeky metric-vs-imperial tone.
 
 ## Engineering constraints
 
-- **No npm dependencies.** npm is broken on the dev machine; use Node built-ins.
-- **Node runs TypeScript directly** (v26). `tsc` (~6.0.3) type-checks + emits.
-- `.ts` import specifiers in source; `tsc` rewrites to `.js` on build.
-- No `enum`/`namespace` (Node type-stripping rejects them).
+- **Plain JavaScript, no build step.** The files that ship are the source, so the
+  AMO answer to "do you use build tools?" is **No**.
+- **No npm dependencies.** Use Node built-ins only.
+- ES modules with explicit `.js` import specifiers.
 - Keep the codebase small.
 
 ## Architecture
 
 ```
 manifest.json          MV3 manifest (name "GramGuru 🧐")
-content-loader.js      classic content script → dynamic-import dist/content.js
+content-loader.js      classic content script → dynamic-import src/content.js
                        (Firefox content scripts can't be ES modules directly)
 content.css            inline marker + tooltip styles
 popup.html
-src/convert.ts         PURE converter (no DOM) — shared by content script + tests
-src/data.generated.ts  GENERATED matprat density table (do not edit by hand)
-src/content.ts         DOM glue: TreeWalker + MutationObserver + badge count
-src/background.ts      sets toolbar badge from content-script count
-src/popup.ts           the one switch
-src/globals.d.ts       minimal `browser` typings (dependency-free)
-scripts/build-data.ts  fetch matprat → src/data.generated.ts
-scripts/package.ts     zip runtime files → web-ext-artifacts/
-scripts/publish.ts     AMO Submission API v5 upload + publish (JWT via node:crypto)
-tests/convert.test.ts  pure unit tests
-tests/sites.test.ts    live recipe-page tests (ld+json recipeIngredient)
+src/convert.js         PURE converter (no DOM) — shared by content script + tests
+src/data.js            Committed matprat density table (plain data)
+src/content.js         DOM glue: TreeWalker + MutationObserver + badge count
+src/background.js      sets toolbar badge from content-script count
+src/popup.js           the one switch
+scripts/build-data.js  optional: fetch matprat → src/data.js
+scripts/package.js     zip runtime files → web-ext-artifacts/
+scripts/publish.js     AMO Submission API v5 upload + publish (JWT via node:crypto)
+tests/convert.test.js  pure unit tests
+tests/sites.test.js    live recipe-page tests (ld+json recipeIngredient)
 tests/fixtures/        cached ingredient lists for offline test runs
 ```
 
@@ -75,9 +74,9 @@ tests/fixtures/        cached ingredient lists for offline test runs
 
 ## Automated tests
 
-- `tests/convert.test.ts` — decimals, fractions, plurals/umlaut
+- `tests/convert.test.js` — decimals, fractions, plurals/umlaut
   (`gulrøtter→gulrot`), unknown→🤷, imperial, scaling, and false-positive guards.
-- `tests/sites.test.ts` — fetches the real pages, extracts `recipeIngredient`
+- `tests/sites.test.js` — fetches the real pages, extracts `recipeIngredient`
   from `application/ld+json`, asserts grams. Offline fallback: `tests/fixtures/`.
   - <https://www.matprat.no/oppskrifter/tradisjon/leverpostei/>
   - <https://meny.no/oppskrifter/kylling/helstekt-kylling-med-ovnsbakte-rotgronnsaker>
@@ -86,12 +85,11 @@ tests/fixtures/        cached ingredient lists for offline test runs
 ## Commands
 
 ```bash
-node scripts/build-data.ts   # regenerate density table
-node scripts/build.ts        # type-check + emit + bundle dist/
 node --test tests/           # test suite
-node scripts/e2e.ts          # real headless-Firefox end-to-end run
-node scripts/package.ts      # build the zip
-node scripts/publish.ts      # publish to AMO
+node scripts/e2e.js          # real headless-Firefox end-to-end run
+node scripts/package.js      # build the zip
+node scripts/publish.js      # publish to AMO
+node scripts/build-data.js   # optional: refresh the density table
 ```
 
 ## Publishing to AMO (TLDR)
@@ -101,22 +99,23 @@ node scripts/publish.ts      # publish to AMO
    <https://addons.mozilla.org/developers/>
 3. Generate API keys: <https://addons.mozilla.org/developers/addon/api/key/>
 4. `export AMO_API_KEY=… AMO_API_SECRET=… AMO_ADDON_ID=gramguru` then
-   `tsc -p tsconfig.json && node scripts/package.ts && node scripts/publish.ts`
+   `node scripts/package.js && node --env-file=.env scripts/publish.js`
 5. First submission is human-reviewed, then live.
    Guide: <https://extensionworkshop.com/documentation/publish/submitting-an-add-on/>
 
 ## Milestones
 
 1. ✅ Scaffold + MIT + README/AGENTS warnings + icons.
-2. ✅ `build-data.ts` + `data.generated.ts`.
-3. ✅ `convert.ts` + `convert.test.ts` green.
-4. ✅ `content.ts` + popup + manifest (temporary-load via `about:debugging`).
-5. ✅ `sites.test.ts` green against both recipes.
-6. ✅ `package.ts` + `publish.ts` + README publish TLDR.
+2. ✅ `build-data.js` + `src/data.js`.
+3. ✅ `convert.js` + `convert.test.js` green.
+4. ✅ `content.js` + popup + manifest (temporary-load via `about:debugging`).
+5. ✅ `sites.test.js` green against both recipes.
+6. ✅ `package.js` + `publish.js` + README publish TLDR.
+7. ✅ Converted the whole project to plain JavaScript (no build step).
 
 ## Open items
 
-- ✅ Firefox end-to-end check (`scripts/e2e.ts`): installs the real temporary
+- ✅ Firefox end-to-end check (`scripts/e2e.js`): installs the real temporary
   add-on over WebDriver BiDi and asserts marks on the test page + both real sites.
 - Cross-node matching: recipe sites split units across inline `<span>`s, so the
   content script flattens each leaf block before converting.
