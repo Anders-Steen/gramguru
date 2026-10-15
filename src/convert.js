@@ -63,11 +63,11 @@ const UNITS = {
     pound: { key: "pound", generic: 453.6, imperial: true },
     pund: { key: "pound", generic: 453.6, imperial: true },
     lb: { key: "pound", generic: 453.6, imperial: true },
-    gallon: { key: "liter", generic: 3785, imperial: true },
-    pints: { key: "milliliter", generic: 473, imperial: true },
-    pint: { key: "milliliter", generic: 473, imperial: true },
-    quarts: { key: "milliliter", generic: 946, imperial: true },
-    quart: { key: "milliliter", generic: 946, imperial: true },
+    gallon: { key: "liter", generic: 3785, imperial: true, genericOnly: true },
+    pints: { key: "milliliter", generic: 473, imperial: true, genericOnly: true },
+    pint: { key: "milliliter", generic: 473, imperial: true, genericOnly: true },
+    quarts: { key: "milliliter", generic: 946, imperial: true, genericOnly: true },
+    quart: { key: "milliliter", generic: 946, imperial: true, genericOnly: true },
     sticks: { key: "piece", generic: 113, imperial: true },
     stick: { key: "piece", generic: 113, imperial: true },
 };
@@ -166,6 +166,93 @@ const INDEX = (() => {
         if (key)
             map.set(key, entry.u);
     }
+    // English names -> Norwegian entries, so international recipes resolve too.
+    const ENGLISH_ALIASES = {
+        "all purpose flour": "hvetemel",
+        "all-purpose flour": "hvetemel",
+        "plain flour": "hvetemel",
+        "bread flour": "hvetemel",
+        flour: "hvetemel",
+        sugar: "sukker",
+        "brown sugar": "sukker",
+        "caster sugar": "sukker",
+        "granulated sugar": "sukker",
+        butter: "smør",
+        "unsalted butter": "smør",
+        milk: "melk",
+        egg: "egg",
+        eggs: "egg",
+        salt: "salt",
+        pepper: "pepper",
+        water: "vann",
+        honey: "honning",
+        cream: "fløte",
+        "heavy cream": "fløte",
+        "double cream": "fløte",
+        "baking powder": "bakepulver",
+        "baking soda": "natron",
+        "cocoa powder": "kakaopulver",
+        cocoa: "kakaopulver",
+        vanilla: "vanilje",
+        "vanilla extract": "vanilje",
+        oats: "havregryn",
+        oatmeal: "havregryn",
+        rice: "ris",
+        breadcrumbs: "brødsmuler",
+        "olive oil": "olivenolje",
+        oil: "olje",
+        yeast: "gjær",
+        onion: "løk",
+        garlic: "hvitløk",
+        carrot: "gulrot",
+        potato: "potet",
+        potatoes: "potet",
+        tomato: "tomat",
+        "tomato paste": "tomatpuré",
+        "chicken stock": "kyllingkraft",
+        "chicken broth": "kyllingkraft",
+        "vegetable stock": "grønnsakskraft",
+        "beef stock": "oksekraft",
+        "soy sauce": "soyasaus",
+        mustard: "sennep",
+        cornstarch: "maisenna",
+        cornflour: "maisenna",
+        "sharp cheddar": "ost",
+        cheddar: "ost",
+        cheese: "ost",
+        parmesan: "parmesan",
+        parmigiano: "parmesan",
+        mozzarella: "mozzarella",
+        "half and half": "fløte",
+        "half-and-half": "fløte",
+        "whipping cream": "fløte",
+        parsley: "persille",
+        "green onion": "vårløk",
+        "spring onion": "vårløk",
+        scallion: "vårløk",
+        scallions: "vårløk",
+        "bell pepper": "paprika",
+        "red pepper flakes": "chiliflak",
+        "chili flakes": "chiliflak",
+        spinach: "spinat",
+        prawns: "reker",
+        prawn: "reker",
+        shrimp: "reker",
+        "ground beef": "kjøttdeig",
+        "minced beef": "kjøttdeig",
+        chicken: "kylling",
+        "chicken breast": "kyllingfilet",
+        "chicken breasts": "kyllingfilet",
+        zucchini: "squash",
+        courgette: "squash",
+        mushrooms: "sjampinjong",
+        mushroom: "sjampinjong",
+    };
+    for (const [en, no] of Object.entries(ENGLISH_ALIASES)) {
+        const target = map.get(normalize(no));
+        if (target)
+            map.set(normalize(en), target);
+    }
     return map;
 })();
 function lookupIngredient(phrase) {
@@ -219,13 +306,24 @@ function stripDescriptors(phrase) {
         .join(" ");
 }
 export function parseQuantity(raw) {
-    const text = raw.trim();
+    const text = raw.trim().replace(/\s+/g, " ");
     if (UNICODE_FRACTIONS[text] !== undefined)
         return UNICODE_FRACTIONS[text];
-    const fraction = text.match(/^(\d+)\s*\/\s*(\d+)$/);
-    if (fraction) {
-        const denom = Number(fraction[2]);
-        return denom === 0 ? null : Number(fraction[1]) / denom;
+    // "1 1/2"
+    let m = text.match(/^(\d+)\s+(\d+)\s*\/\s*(\d+)$/);
+    if (m) {
+        const denom = Number(m[3]);
+        return denom === 0 ? null : Number(m[1]) + Number(m[2]) / denom;
+    }
+    // "1½"
+    m = text.match(/^(\d+)\s*([½¼¾⅓⅔⅛⅜⅝⅞])$/);
+    if (m)
+        return Number(m[1]) + UNICODE_FRACTIONS[m[2]];
+    // "1/2"
+    m = text.match(/^(\d+)\s*\/\s*(\d+)$/);
+    if (m) {
+        const denom = Number(m[2]);
+        return denom === 0 ? null : Number(m[1]) / denom;
     }
     const num = Number(text.replace(",", "."));
     return Number.isFinite(num) ? num : null;
@@ -245,13 +343,16 @@ const ALIASES = Object.keys(UNITS).sort((a, b) => b.length - a.length);
 const UNIT_ALTERNATION = ALIASES.map((alias) => alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
 // number (decimal, fraction, or unicode fraction) + unit (+ optional ingredient)
 const MATCH_RE = new RegExp(`(?<![\\p{L}\\p{N}])` +
-    `(\\d+(?:[.,]\\d+)?|\\d+\\s*/\\s*\\d+|[½¼¾⅓⅔⅛⅜⅝⅞])\\s*` +
+    `(\\d+\\s*[½¼¾⅓⅔⅛⅜⅝⅞]|\\d+\\s+\\d+\\s*/\\s*\\d+|\\d+(?:[.,]\\d+)?|\\d+\\s*/\\s*\\d+|[½¼¾⅓⅔⅛⅜⅝⅞])\\s*` +
     `(${UNIT_ALTERNATION})\\b\\.?`, "giu");
 const INGREDIENT_RE = /^[\s]+([\p{L}][\p{L}\p{N}-]*(?:\s+[\p{L}][\p{L}\p{N}-]*){0,3})/u;
 // `fallbackIngredient` is the text of an adjacent cell on the same row (some
 // sites put the amount and the ingredient in separate elements).
+// A line that already states a mass (g/kg) is already metric — don't touch it.
+const HAS_MASS = /(?:^|[^\p{L}\p{N}])\d+(?:[.,]\d+)?\s*(?:kg|g)\b/iu;
 export function convertText(text, fallbackIngredient = "") {
     const matches = [];
+    const alreadyMetric = HAS_MASS.test(text);
     MATCH_RE.lastIndex = 0;
     let m;
     while ((m = MATCH_RE.exec(text)) !== null) {
@@ -262,6 +363,11 @@ export function convertText(text, fallbackIngredient = "") {
         const def = UNITS[alias];
         if (!def)
             continue;
+        if (alreadyMetric) {
+            // e.g. "150g/5oz", "1 cup (200 g)" — the weight is already there.
+            MATCH_RE.lastIndex = m.index + m[0].length;
+            continue;
+        }
         const after = text.slice(m.index + m[0].length);
         const ingredientMatch = after.match(INGREDIENT_RE);
         const trailingIngredient = ingredientMatch ? ingredientMatch[1] : "";
@@ -276,7 +382,11 @@ export function convertText(text, fallbackIngredient = "") {
         const rawText = usedFallback
             ? `${baseText} ${fallbackIngredient.trim()}`.replace(/\s+/g, " ").trim()
             : baseText;
-        const found = lookupIngredient(ingredientPhrase) ?? lookupIngredient(stripDescriptors(ingredientPhrase));
+        // genericOnly units (pint/quart/gallon) have no per-unit table column;
+        // using the ingredient's per-ml/per-l weight here would be wrong.
+        const found = def.genericOnly
+            ? null
+            : lookupIngredient(ingredientPhrase) ?? lookupIngredient(stripDescriptors(ingredientPhrase));
         let grams;
         let approximate;
         let ingredientName = null;

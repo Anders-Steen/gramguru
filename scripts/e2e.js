@@ -70,6 +70,62 @@ const SITES = [
         ],
         minMarks: 7,
     },
+    // Extra Norwegian sites
+    {
+        name: "godt kjøttkaker",
+        url: "https://www.godt.no/oppskrifter/kjoett/kjoettdeig/7691/kjoettkaker-i-brun-saus",
+        expect: [
+            { original: "3 ss hvetemel", shown: "27 g" },
+            { original: "1 stk egg", shown: "55 g" },
+            { original: "2 dl melk", shown: "200 g" },
+        ],
+        minMarks: 9,
+    },
+    {
+        name: "trinesmatblogg kyllinggryte",
+        url: "https://trinesmatblogg.no/recipe/kremet-kyllinggryte-med-gnocchi-og-soltorkede-tomater/",
+        expect: [{ original: "1 ½ liter", shown: "1.5 kg", emoji: "🤷" }],
+        minMarks: 4,
+    },
+    // International sites (US/UK units)
+    {
+        name: "bbc good food pancakes",
+        url: "https://www.bbc.co.uk/food/recipes/how_to_make_pancakes_02824",
+        expect: [{ original: "1 tbsp melted butter", shown: "15 g", emoji: "🔪" }],
+        minMarks: 1,
+    },
+    {
+        name: "bon appetit cookies",
+        url: "https://www.bonappetit.com/recipe/bas-best-chocolate-chip-cookies",
+        // This recipe states grams in parentheses, so little should convert.
+        expect: [{ original: "3 Tbsp.", shown: "45 g", emoji: "🤷" }],
+        minMarks: 1,
+    },
+    {
+        name: "pioneer woman green bean casserole",
+        url: "https://www.thepioneerwoman.com/food-cooking/recipes/a11889/green-bean-casserole/",
+        expect: [
+            { original: "2 lb. fresh green beans", shown: "907.2 g", emoji: "🔪" },
+            { original: "4 Tbsp. all-purpose flour", shown: "36 g" },
+            { original: "1 1/2 tsp. salt", shown: "10.5 g" },
+        ],
+        minMarks: 7,
+    },
+    {
+        name: "foodnetwork uk prawns",
+        url: "https://foodnetwork.co.uk/recipes/prawn-white-bean-and-feta-skillet-for-two",
+        expect: [{ original: "1/2 teaspoon salt", shown: "3.5 g" }],
+        minMarks: 1,
+    },
+    {
+        name: "delish chicken parm soup",
+        url: "https://www.delish.com/cooking/recipe-ideas/recipes/a44085/chicken-parm-soup-recipe/",
+        expect: [
+            { original: "8 oz. penne", shown: "226.8 g" },
+            { original: "1 cup finely grated Parmesan", shown: "94.6 g" },
+        ],
+        minMarks: 6,
+    },
 ];
 class Bidi {
     constructor(ws) {
@@ -177,22 +233,27 @@ async function readText(bidi, context) {
 }
 // Simulate a tap/click on the first mark and check the floating tooltip shows.
 async function tapFirstMark(bidi, context) {
-    const raw = await evaluate(bidi, context, `(() => {
-        const el = document.querySelector('.gg');
-        if (!el) return JSON.stringify(null);
-        el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
-        const tip = document.getElementById('gg-tip');
-        if (!tip) return JSON.stringify(null);
-        return JSON.stringify({ display: getComputedStyle(tip).display, text: tip.textContent });
-    })()`);
-    return typeof raw === "string" ? JSON.parse(raw) : null;
+    for (let i = 0; i < 12; i++) {
+        const raw = await evaluate(bidi, context, `(() => {
+            const el = document.querySelector('.gg');
+            if (!el) return JSON.stringify(null);
+            el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+            const tip = document.getElementById('gg-tip');
+            if (!tip) return JSON.stringify(null);
+            return JSON.stringify({ display: getComputedStyle(tip).display, text: tip.textContent });
+        })()`);
+        const val = typeof raw === "string" ? JSON.parse(raw) : null;
+        if (val && val.display !== "none" && val.text) return val;
+        await sleep(250);
+    }
+    return null;
 }
 function check(name, marks, pageText, site) {
     const problems = [];
     if (marks.length < site.minMarks) {
         problems.push(`expected >= ${site.minMarks} marks, got ${marks.length}`);
     }
-    for (const expected of site.expect) {
+    for (const expected of site.expect ?? []) {
         const hit = marks.find((m) => (m.original || "").includes(expected.original) && m.text.trim() === expected.shown);
         if (!hit) {
             problems.push(`missing mark: ${JSON.stringify(expected.original)} -> ${JSON.stringify(expected.shown)}`);

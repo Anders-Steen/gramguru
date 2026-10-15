@@ -239,17 +239,19 @@ function schedule() {
     }, 500);
 }
 function start() {
+    // Attach listeners first so a mark is never shown before it's interactive.
+    document.addEventListener("click", onTipClick, true);
+    document.addEventListener("mouseover", onTipOver, true);
+    document.addEventListener("scroll", hideTip, true);
+    document.addEventListener("touchend", onTipClick, true);
+    window.addEventListener("resize", hideTip);
+    window.addEventListener("touchmove", hideTip, { passive: true });
     scan(document.body);
     observer = new MutationObserver((mutations) => {
         if (mutations.some((m) => m.addedNodes.length > 0))
             schedule();
     });
     observer.observe(document.body, { childList: true, subtree: true });
-    document.addEventListener("click", onTipClick, true);
-    document.addEventListener("mouseover", onTipOver, true);
-    document.addEventListener("scroll", hideTip, true);
-    window.addEventListener("resize", hideTip);
-    window.addEventListener("touchmove", hideTip, { passive: true });
 }
 function stop() {
     observer?.disconnect();
@@ -257,6 +259,7 @@ function stop() {
     document.removeEventListener("click", onTipClick, true);
     document.removeEventListener("mouseover", onTipOver, true);
     document.removeEventListener("scroll", hideTip, true);
+    document.removeEventListener("touchend", onTipClick, true);
     window.removeEventListener("resize", hideTip);
     window.removeEventListener("touchmove", hideTip);
     hideTip();

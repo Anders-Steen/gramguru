@@ -97,27 +97,6 @@ kitchen plus both real recipe sites. Results are printed per site. 🧪
 Need Firefox on your PATH (it is, if `firefox --version` works). Real-site
 checks need network; the local `devtest/testpage.html` does not.
 
-## Publish to addons.mozilla.org (AMO) 🚀
-
-**TL;DR:**
-
-1. Create a Mozilla account: <https://accounts.mozilla.org/>
-2. Open the Developer Hub: <https://addons.mozilla.org/developers/> ➜
-   **Submit a New Add-on** ➜ choose **On this site** (listed).
-3. Generate API keys: <https://addons.mozilla.org/developers/addon/api/key/>
-4. Export them and publish:
-   ```bash
-   node scripts/package.js          # or: npm run package
-   node --env-file=.env scripts/publish.js
-   ```
-5. First submission gets human-reviewed, then it's live. 🧐
-
-Full guide: <https://extensionworkshop.com/documentation/publish/submitting-an-add-on/>
-
-> The publish script uses the AMO Submission API v5 with a JWT. Creating the
-> very first listing needs that one manual DevHub step; after that, uploads are
-> scripted.
-
 ## Privacy
 
 GramGuru has no analytics, no telemetry, and makes no network requests at
