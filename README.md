@@ -64,8 +64,13 @@ modules that run as-is.
 node --test tests/           # unit + (optionally live) recipe tests
 node scripts/e2e.js          # REAL end-to-end run in headless Firefox
 node scripts/package.js      # zip the extension into web-ext-artifacts/
+node scripts/package.js --beta   # zip a beta-channel build (separate add-on id)
 node scripts/build-data.js   # optional: refresh src/data.js from matprat.no
 ```
+
+The beta build is the same code with a different manifest id (`gramguru-beta@anderss`)
+and version, so it registers as its own (unlisted, self-distributed) add-on — no
+review wait. Override with `BETA_ADDON_ID`, `BETA_VERSION`, `BETA_UPDATE_URL`.
 
 `node --test` fetches the real recipe pages and asserts the conversions. Offline?
 It falls back to cached fixtures in `tests/fixtures/`. Refresh fixtures with

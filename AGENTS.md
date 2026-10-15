@@ -49,7 +49,8 @@ tests/                 node:test suites. Pure tests + live recipe-page tests.
 ```bash
 node --test tests/                  # unit + (optionally live) recipe tests
 node scripts/e2e.js                 # REAL headless-Firefox end-to-end run
-node scripts/package.js             # zip the extension
+node scripts/package.js             # zip the extension (stable/listed)
+node scripts/package.js --beta      # zip a beta build (id gramguru-beta@anderss)
 node scripts/build-data.js          # optional: refresh src/data.js
 GRAMGURU_UPDATE_FIXTURES=1 node --test tests/   # refresh site fixtures
 ```
