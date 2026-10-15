@@ -6,11 +6,12 @@
   animation: gg-pulse 1.1s ease-out 1;
 }
 
+/* The marker emoji is supplied by JS (data-gg-marker) so the inline marker
+   always matches the emoji shown in the tooltip. */
 .gg-end::after {
-  content: "✳";
-  font-size: 0.62em;
+  content: attr(data-gg-marker);
+  font-size: 0.72em;
   vertical-align: super;
-  color: #2e7d32;
   margin-left: 1px;
 }
 
@@ -18,30 +19,15 @@
   background: rgba(46, 125, 50, 0.2);
 }
 
-/* Unknown ingredient: original kept, red, with a "?" marker. */
+/* Unknown ingredient: original kept, red dotted. */
 .gg-unknown {
   border-bottom-style: dotted;
   border-bottom-color: #c62828;
   background: rgba(198, 40, 40, 0.1);
 }
 
-.gg-unknown::after {
-  color: #c62828;
-}
-
-.gg-unknown.gg-end::after {
-  content: "?";
-  color: #c62828;
-}
-
 .gg-imperial {
   border-bottom-color: #c62828;
-}
-
-.gg-imperial.gg-end::after {
-  content: "🔪";
-  font-size: 0.72em;
-  color: #c62828;
 }
 
 .gg {

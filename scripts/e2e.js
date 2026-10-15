@@ -214,8 +214,11 @@ async function readMarks(bidi, context) {
         const groups = new Map();
         for (const el of document.querySelectorAll('.gg')) {
           const id = el.dataset.ggId || String(Math.random());
-          const g = groups.get(id) || { text: '', title: el.title, original: el.dataset.ggOriginal || '', cls: el.className };
+          const after = getComputedStyle(el, '::after').content || '';
+          const marker = after.replace(/^"|"$/g, '');
+          const g = groups.get(id) || { text: '', title: el.title, original: el.dataset.ggOriginal || '', cls: el.className, marker: '' };
           g.text += el.textContent;
+          if (!g.marker && marker && marker !== 'none') g.marker = marker;
           groups.set(id, g);
         }
         return JSON.stringify([...groups.values()]);
@@ -281,6 +284,12 @@ function check(name, marks, pageText, site) {
         const hit = marks.find((m) => (m.original || "").includes(absent));
         if (hit)
             problems.push(`must not convert ${JSON.stringify(absent)} but produced ${JSON.stringify(hit.text)}`);
+    }
+    // The inline marker emoji must match the emoji in the tooltip.
+    for (const m of marks) {
+        if (m.marker && m.title && !m.title.includes(m.marker)) {
+            problems.push(`marker ${JSON.stringify(m.marker)} != tooltip emoji in ${JSON.stringify(m.title)}`);
+        }
     }
     const ok = problems.length === 0;
     console.log(`\n${ok ? "✔" : "✖"} ${name} (${marks.length} marks)`);

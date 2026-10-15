@@ -32,12 +32,12 @@ pity. 🇺🇸)
   [matprat.no](https://www.matprat.no/) (Norwegian) and
   [USDA FoodData Central](https://fdc.nal.usda.gov/) (English), so
   `3 ss hvetemel` ≠ `3 ss sukker` and `1 cup cheddar` ≠ `1 cup milk`.
-- ✳️ Marks every conversion inline with a dashed underline, a colored asterisk,
-  and a one-time pulse — so you *definitely* notice something happened.
+- 🧐 Marks every conversion inline with a dashed underline, a one-time pulse, and
+  an emoji badge that matches the tooltip: **🧐** exact · **🔪** imperial · **🤷** unknown.
 - 🖱️ Hover (or tap) a mark to see e.g. `27 g (exact) 🧐`.
 - 🤷 **Unknown ingredient?** It never invents a number: it keeps the original text,
-  marks it **red** (`?`), and the tooltip gives **both** estimates —
-  `1 dl ≈ 100 g (liquid, like water) · 55 g (dry, like flour)`.
+  marks it **red** (🤷), and the tooltip gives **both** estimates —
+  `1 dl ≈ 100 g (liquid, like water) · 55 g (dry, like flour) 🤷`.
 - 🔢 Shows a count badge on the toolbar icon.
 - 🔌 **Zero network calls.** The density tables are bundled. Your recipes stay
   yours. 🕵️

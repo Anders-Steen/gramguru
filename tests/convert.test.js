@@ -47,7 +47,7 @@ test("unknown volume keeps the original and offers liquid + dry estimates", () =
     assert.equal(m.unknown, true);
     assert.equal(m.metric, "");
     assert.equal(m.original, "2 ss");
-    assert.equal(m.note, "2 ss ≈ 30 g (liquid, like water) · 18 g (dry, like flour)");
+    assert.equal(m.note, "2 ss ≈ 30 g (liquid, like water) · 18 g (dry, like flour) 🤷");
 });
 test("count units of unknown origin are marked unknown, not guessed", () => {
     const m = first("3 stk");
@@ -74,7 +74,7 @@ test("imperial ounces are dragged into the metric age", () => {
     const m = first("8 oz smør");
     assert.equal(m.imperial, true);
     assert.equal(m.grams, 226.8);
-    assert.equal(m.note, "8 oz smør = 226.8 g (exact) 🔪 death to imperialism");
+    assert.equal(m.note, "8 oz smør = 226.8 g (exact) 🔪");
 });
 test("pounds produce grams", () => {
     const m = first("1 lb potet");

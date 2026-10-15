@@ -66,6 +66,7 @@ function makeSpan(match, id) {
             (match.imperial && !match.unknown ? " gg-imperial" : "");
     span.dataset.ggId = id;
     span.dataset.gg = match.unknown ? "" : match.metric;
+    span.dataset.ggMarker = match.marker;
     span.dataset.ggOriginal = match.text.trim();
     span.dataset.ggTip = match.note;
     span.title = match.note;

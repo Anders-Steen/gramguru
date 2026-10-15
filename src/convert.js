@@ -424,7 +424,10 @@ export function convertText(text, fallbackIngredient = "") {
         }
         const original = text.slice(m.index, unitEnd);
         const metric = unknown ? "" : formatGrams(grams);
-        const note = buildNote({ rawText, metric, unknown, estimates, imperial: Boolean(def.imperial) });
+        const imperial = Boolean(def.imperial);
+        // One emoji, used in both the tooltip and the inline marker.
+        const marker = unknown ? "🤷" : imperial ? "🔪" : "🧐";
+        const note = buildNote({ rawText, metric, unknown, estimates, marker });
         matches.push({
             start: m.index,
             unitEnd,
@@ -440,7 +443,8 @@ export function convertText(text, fallbackIngredient = "") {
             ingredient: ingredientName,
             unknown,
             estimates,
-            imperial: Boolean(def.imperial),
+            imperial,
+            marker,
             note,
         });
         MATCH_RE.lastIndex = end;
@@ -452,12 +456,9 @@ function buildNote(args) {
     if (args.unknown) {
         if (args.estimates) {
             const dry = args.estimates.dry ? ` · ${args.estimates.dry} (dry, like flour)` : "";
-            return `${raw} ≈ ${args.estimates.liquid} (liquid, like water)${dry}`;
+            return `${raw} ≈ ${args.estimates.liquid} (liquid, like water)${dry} ${args.marker}`;
         }
-        return `${raw} — ingredient not recognised 🤷`;
+        return `${raw} — ingredient not recognised ${args.marker}`;
     }
-    if (args.imperial) {
-        return `${raw} = ${args.metric} (exact) 🔪 death to imperialism`;
-    }
-    return `${raw} = ${args.metric} (exact) 🧐`;
+    return `${raw} = ${args.metric} (exact) ${args.marker}`;
 }

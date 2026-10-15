@@ -81,7 +81,9 @@ machine — call `node` directly).
   **unknown** → a match with `unknown: true`, `metric: ""`, and the original kept.
   Volume units also get `estimates` `{liquid, dry}` (water vs wheat flour).
 - On the page (`src/content.js` `makeSpan()`): known → the metric value; unknown →
-  the original amount+unit, class `gg-unknown` (red dotted, `?` marker).
+  the original amount+unit, class `gg-unknown` (red dotted).
+- The inline marker emoji comes from `match.marker` via CSS `attr(data-gg-marker)`
+  so it always matches the tooltip: `🧐` exact / `🔪` imperial / `🤷` unknown.
 - Unit handling (`unitKind()`): **count** units (stk, pk, skive, neve, fedd, bunt,
   boks, stick) are never guessed. **Volume** units (l, dl, ss, ts, kopp, ...) get
   water/flour estimates when unknown. **Mass** units (oz, lb) are exact constants.
