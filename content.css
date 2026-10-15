@@ -1,0 +1,48 @@
+/* GramGuru markings. The asterisk is the point: you WILL notice it. */
+.gg {
+  border-bottom: 1.5px dashed #2e7d32;
+  cursor: help;
+  background: rgba(46, 125, 50, 0.08);
+  animation: gg-pulse 1.1s ease-out 1;
+}
+
+.gg-end::after {
+  content: "✳";
+  font-size: 0.62em;
+  vertical-align: super;
+  color: #2e7d32;
+  margin-left: 1px;
+}
+
+.gg:hover {
+  background: rgba(46, 125, 50, 0.2);
+}
+
+.gg-approx {
+  border-bottom-style: dotted;
+  border-bottom-color: #b26a00;
+  background: rgba(178, 106, 0, 0.08);
+}
+
+.gg-approx.gg-end::after {
+  color: #b26a00;
+}
+
+.gg-imperial {
+  border-bottom-color: #c62828;
+}
+
+.gg-imperial.gg-end::after {
+  content: "🔪";
+  font-size: 0.72em;
+  color: #c62828;
+}
+
+@keyframes gg-pulse {
+  from {
+    background: rgba(46, 125, 50, 0.45);
+  }
+  to {
+    background: rgba(46, 125, 50, 0.08);
+  }
+}
