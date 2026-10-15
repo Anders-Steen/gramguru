@@ -348,6 +348,10 @@ function round(n, digits) {
     const f = 10 ** digits;
     return Math.round(n * f) / f;
 }
+// Compact number for the wet/dry estimates: no decimals at 20 g or more.
+function shortNumber(grams) {
+    return grams >= 20 ? String(Math.round(grams)) : String(round(grams, 1));
+}
 const ALIASES = Object.keys(UNITS).sort((a, b) => b.length - a.length);
 const UNIT_ALTERNATION = ALIASES.map((alias) => alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
 // number (decimal, fraction, or unicode fraction) + unit (+ optional ingredient)
@@ -418,7 +422,7 @@ export function convertText(text, fallbackIngredient = "") {
                     const liquid = quantity * def.generic * (def.mul ?? 1);
                     const flourPer = FLOUR ? FLOUR[def.key] : undefined;
                     const dry = flourPer !== undefined ? quantity * flourPer * (def.mul ?? 1) : null;
-                    estimates = { liquid: formatGrams(liquid), dry: dry !== null ? formatGrams(dry) : null };
+                    estimates = { liquid: shortNumber(liquid), dry: dry !== null ? shortNumber(dry) : null };
                 }
             }
         }
@@ -455,8 +459,8 @@ function buildNote(args) {
     const raw = args.rawText.trim();
     if (args.unknown) {
         if (args.estimates) {
-            const dry = args.estimates.dry ? ` or ${args.estimates.dry} dry` : "";
-            return `${raw} ≈ ${args.estimates.liquid} liquid${dry} ${args.marker}`;
+            const dry = args.estimates.dry ? `\n${args.estimates.dry} g if dry` : "";
+            return `${raw}\n${args.estimates.liquid} g if wet${dry} ${args.marker}`;
         }
         return `${raw} — ingredient not recognised ${args.marker}`;
     }

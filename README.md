@@ -37,8 +37,9 @@ pity. 🇺🇸)
   (No added underline — we don't fight the page's own styling.)
 - 🖱️ Hover (or tap) a mark to see e.g. `27 g (exact) 🧐`.
 - 🤷 **Unknown ingredient?** It never invents a single number: it shows **both**
-  estimates inline — `30 g liq / 18 g dry 🤷` — and the tooltip spells it out:
-  `2 ss ≈ 30 g liquid or 18 g dry 🤷`. (Unknown *count* units keep the original.)
+  estimates inline — `30/18 g wet/dry 🤷` — and the tooltip spells them out on two
+  lines (`30 g if wet` / `18 g if dry`). Values ≥ 20 drop decimals. (Unknown
+  *count* units keep the original.)
 - 🔢 Shows a count badge on the toolbar icon.
 - 🔌 **Zero network calls.** The density tables are bundled. Your recipes stay
   yours. 🕵️
@@ -52,7 +53,7 @@ pity. 🇺🇸)
 | `0,5 ts pepper` | `1.3 g` |
 | `3 stk gulrøtter` | `270 g` |
 | `1 cup cheddar` | `100 g` |
-| `2 ss` (unknown) | `30 g liq / 18 g dry` 🤷 — tooltip: `2 ss ≈ 30 g liquid or 18 g dry` |
+| `2 ss` (unknown) | `30/18 g wet/dry` 🤷 — tooltip: `30 g if wet` / `18 g if dry` |
 | `3 stk` (unknown piece) | `3 stk` 🤷 — tooltip: `ingredient not recognised` |
 | `8 oz smør` | `226.8 g (exact) 🔪 death to imperialism` |
 

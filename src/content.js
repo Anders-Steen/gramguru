@@ -74,8 +74,9 @@ function makeSpan(match, id) {
     // Unknown volume: show both estimates inline, e.g. "30 g liq / 18 g dry".
     // Unknown count: keep the original amount+unit.
     if (match.unknown && match.estimates) {
-        const dry = match.estimates.dry ? ` / ${match.estimates.dry} dry` : "";
-        span.textContent = `${match.estimates.liquid} liq${dry}`;
+        span.textContent = match.estimates.dry
+            ? `${match.estimates.liquid}/${match.estimates.dry} g wet/dry`
+            : `${match.estimates.liquid} g`;
     }
     else {
         span.textContent = match.unknown ? match.original : match.metric;

@@ -47,7 +47,8 @@ test("unknown volume keeps the original and offers liquid + dry estimates", () =
     assert.equal(m.unknown, true);
     assert.equal(m.metric, "");
     assert.equal(m.original, "2 ss");
-    assert.equal(m.note, "2 ss ≈ 30 g liquid or 18 g dry 🤷");
+    assert.deepEqual(m.estimates, { liquid: "30", dry: "18" });
+    assert.equal(m.note, "2 ss\n30 g if wet\n18 g if dry 🤷");
 });
 test("count units of unknown origin are marked unknown, not guessed", () => {
     const m = first("3 stk");
