@@ -19,11 +19,11 @@ const SITES = [
         name: "testpage.html",
         url: null,
         expect: [
-            { text: "3 ss hvetemel", title: "27 g", emoji: "🧐" },
-            { text: "1,5 dl melk", title: "150 g" },
-            { text: "3 stk gulrøtter", title: "270 g" },
-            { text: "2 ss", emoji: "🤷" },
-            { text: "8 oz smør", emoji: "🔪" },
+            { original: "3 ss hvetemel", shown: "27 g", emoji: "🧐" },
+            { original: "1,5 dl melk", shown: "150 g" },
+            { original: "3 stk gulrøtter", shown: "270 g" },
+            { original: "2 ss", shown: "30 g", emoji: "🤷" },
+            { original: "8 oz smør", shown: "226.8 g", emoji: "🔪" },
         ],
         minMarks: 10,
     },
@@ -31,9 +31,9 @@ const SITES = [
         name: "matprat leverpostei",
         url: "https://www.matprat.no/oppskrifter/tradisjon/leverpostei/",
         expect: [
-            { text: "3 ss hvetemel", title: "27 g" },
-            { text: "1,5 dl melk", title: "150 g" },
-            { text: "1 pk aspik", emoji: "🤷" },
+            { original: "3 ss hvetemel", shown: "27 g" },
+            { original: "1,5 dl melk", shown: "150 g" },
+            { original: "1 pk aspik", shown: "400 g", emoji: "🤷" },
         ],
         minMarks: 10,
     },
@@ -41,9 +41,9 @@ const SITES = [
         name: "meny helstekt kylling",
         url: "https://meny.no/oppskrifter/kylling/helstekt-kylling-med-ovnsbakte-rotgronnsaker",
         expect: [
-            { text: "2 dl hvitvin", title: "200 g" },
-            { text: "3 dl kyllingkraft", title: "300 g" },
-            { text: "1 stk hel kylling", title: "1.5 kg" },
+            { original: "2 dl hvitvin", shown: "200 g" },
+            { original: "3 dl kyllingkraft", shown: "300 g" },
+            { original: "1 stk hel kylling", shown: "1.5 kg" },
         ],
         minMarks: 11,
     },
@@ -135,7 +135,7 @@ async function readMarks(bidi, context) {
         const groups = new Map();
         for (const el of document.querySelectorAll('.gg')) {
           const id = el.dataset.ggId || String(Math.random());
-          const g = groups.get(id) || { text: '', title: el.title, cls: el.className };
+          const g = groups.get(id) || { text: '', title: el.title, original: el.dataset.ggOriginal || '' };
           g.text += el.textContent;
           groups.set(id, g);
         }
@@ -154,16 +154,16 @@ function check(name, marks, site) {
         problems.push(`expected >= ${site.minMarks} marks, got ${marks.length}`);
     }
     for (const expected of site.expect) {
-        const hit = marks.find((m) => m.text.trim() === expected.text);
+        const hit = marks.find((m) => (m.original || "").includes(expected.original) && m.text.trim() === expected.shown);
         if (!hit) {
-            problems.push(`missing mark for ${JSON.stringify(expected.text)}`);
+            problems.push(`missing mark: ${JSON.stringify(expected.original)} -> ${JSON.stringify(expected.shown)}`);
             continue;
         }
-        if (expected.title && !hit.title.includes(expected.title)) {
-            problems.push(`${JSON.stringify(expected.text)} title ${JSON.stringify(hit.title)} lacks ${expected.title}`);
+        if (!hit.title.includes(expected.original)) {
+            problems.push(`${JSON.stringify(expected.original)} tooltip ${JSON.stringify(hit.title)} lacks the original`);
         }
         if (expected.emoji && !hit.title.includes(expected.emoji)) {
-            problems.push(`${JSON.stringify(expected.text)} title lacks ${expected.emoji}`);
+            problems.push(`${JSON.stringify(expected.original)} tooltip lacks ${expected.emoji}`);
         }
     }
     const ok = problems.length === 0;

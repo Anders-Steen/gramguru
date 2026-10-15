@@ -117,13 +117,13 @@ async function createVersion(token, addonId, uuid) {
         throw new Error(`version creation failed: ${res.status} ${await res.text()}`);
     return (await res.json());
 }
-async function downloadSigned(url) {
+async function downloadSigned(url, version) {
     const res = await fetch(url);
     if (!res.ok)
         throw new Error(`download failed: ${res.status}`);
     const dir = join(root, "web-ext-artifacts");
     mkdirSync(dir, { recursive: true });
-    const out = join(dir, `gramguru-${MANIFEST.version}-signed.xpi`);
+    const out = join(dir, `gramguru-${version}-signed.xpi`);
     writeFileSync(out, Buffer.from(await res.arrayBuffer()));
     console.log(`signed add-on -> ${out}`);
 }
@@ -175,8 +175,9 @@ async function main() {
         console.log("submitted for review. Track status in the Developer Hub.");
     }
     else if (version.file?.url) {
-        await downloadSigned(version.file.url);
-        recordUpdate(addonId, version.version ?? MANIFEST.version, version.file.url);
+        const ver = version.version ?? MANIFEST.version;
+        await downloadSigned(version.file.url, ver);
+        recordUpdate(addonId, ver, version.file.url);
     }
 }
 main().catch((err) => {

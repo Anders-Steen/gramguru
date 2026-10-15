@@ -55,18 +55,21 @@ function collectLeafBlocks(root, out) {
     for (const child of blockChildren)
         collectLeafBlocks(child, out);
 }
-function makeSpan(match, portion, content) {
+// One visible span per conversion: it shows the metric value. The original
+// text is kept in the tooltip (and in data-gg-original).
+function makeSpan(match, id) {
     const span = document.createElement("span");
     span.className =
         MARK +
-            (portion.isEnd ? " gg-end" : "") +
+            " gg-end" +
             (match.approximate ? " gg-approx" : "") +
             (match.imperial ? " gg-imperial" : "");
-    span.dataset.ggId = portion.id;
+    span.dataset.ggId = id;
     span.dataset.gg = match.metric;
+    span.dataset.ggOriginal = match.text.trim();
     span.title = match.note;
     span.setAttribute("aria-label", match.note);
-    span.textContent = content;
+    span.textContent = match.metric;
     return span;
 }
 function annotateBlock(block) {
@@ -101,15 +104,16 @@ function annotateBlock(block) {
     const portions = new Map();
     for (const match of matches) {
         const id = `${block.tagName}#${markSeq++}`;
+        let first = true;
         for (const entry of map) {
             if (entry.start >= match.end || entry.end <= match.start)
                 continue;
             const from = Math.max(match.start, entry.start) - entry.start;
             const to = Math.min(match.end, entry.end) - entry.start;
-            const isEnd = entry.start + to === match.end;
             const list = portions.get(entry.node) ?? [];
-            list.push({ from, to, match, id, isEnd });
+            list.push({ from, to, match, id, show: first });
             portions.set(entry.node, list);
+            first = false;
         }
     }
     for (const [textNode, list] of portions) {
@@ -121,7 +125,11 @@ function annotateBlock(block) {
             if (portion.from > cursor) {
                 fragment.appendChild(document.createTextNode(value.slice(cursor, portion.from)));
             }
-            fragment.appendChild(makeSpan(portion.match, portion, value.slice(portion.from, portion.to)));
+            // Show the metric once (at the first covered node); drop the rest of
+            // the matched original text so the page reads in grams.
+            if (portion.show) {
+                fragment.appendChild(makeSpan(portion.match, portion.id));
+            }
             cursor = portion.to;
         }
         if (cursor < value.length) {
