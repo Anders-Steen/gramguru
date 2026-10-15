@@ -1,10 +1,16 @@
 // Publishes the packaged extension to addons.mozilla.org (AMO) via the
 // Add-on Submission API v5, using a JWT signed with your API key.
 //
-//   export AMO_API_KEY=...       # https://addons.mozilla.org/developers/addon/api/key/
-//   export AMO_API_SECRET=...
-//   export AMO_ADDON_ID=...      # slug or GUID as shown in your DevHub URL
-//   node scripts/publish.ts [--channel listed|unlisted] [--zip path/to.zip]
+//   node --env-file=.env scripts/publish.ts [--channel listed|unlisted] [--zip path]
+//
+// Required env (see .env.example):
+//   AMO_API_KEY      https://addons.mozilla.org/developers/addon/api/key/
+//   AMO_API_SECRET
+//   AMO_ADDON_ID     slug or GUID (defaults to the manifest GUID)
+//   AMO_SLUG         listing slug to use when creating a brand-new listing
+//
+// If the listing does not exist yet, the script creates it (listed channel)
+// with the metadata below. Otherwise it just adds a new version.
 //
 // Full guide: https://extensionworkshop.com/documentation/publish/submitting-an-add-on/
 
@@ -16,6 +22,21 @@ import { basename, join } from "node:path";
 const API = "https://addons.mozilla.org/api/v5";
 const root = fileURLToPath(new URL("..", import.meta.url));
 
+const MANIFEST = JSON.parse(
+  readFileSync(join(root, "manifest.json"), "utf8"),
+) as { version: string; name: string; description: string; browser_specific_settings?: { gecko?: { id?: string } } };
+
+const LISTING = {
+  slug: process.env.AMO_SLUG ?? "gramguru",
+  name: { "en-US": MANIFEST.name },
+  summary: {
+    "en-US":
+      "Converts Norwegian recipe units (ss, ts, dl, kopp) to grams. Metric only — no imperial survivors.",
+  },
+  categories: { firefox: ["other"] },
+  version: { license: "MIT" },
+};
+
 function arg(name: string, fallback?: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
   return i !== -1 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
@@ -23,16 +44,7 @@ function arg(name: string, fallback?: string): string | undefined {
 
 const channel = arg("channel", "listed") as "listed" | "unlisted";
 const zipPath =
-  arg("zip") ??
-  join(root, "web-ext-artifacts", `gramguru-${manifestVersion()}.zip`);
-
-function manifestVersion(): string {
-  return (
-    JSON.parse(readFileSync(join(root, "manifest.json"), "utf8")) as {
-      version: string;
-    }
-  ).version;
-}
+  arg("zip") ?? join(root, "web-ext-artifacts", `gramguru-${MANIFEST.version}.zip`);
 
 function base64url(input: Buffer | string): string {
   return Buffer.from(input)
@@ -46,12 +58,7 @@ function makeJwt(key: string, secret: string): string {
   const header = base64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
   const now = Math.floor(Date.now() / 1000);
   const payload = base64url(
-    JSON.stringify({
-      iss: key,
-      jti: randomBytes(16).toString("hex"),
-      iat: now,
-      exp: now + 60,
-    }),
+    JSON.stringify({ iss: key, jti: randomBytes(16).toString("hex"), iat: now, exp: now + 60 }),
   );
   const signature = base64url(
     createHmac("sha256", secret).update(`${header}.${payload}`).digest(),
@@ -59,6 +66,7 @@ function makeJwt(key: string, secret: string): string {
   return `${header}.${payload}.${signature}`;
 }
 
+const auth = (token: string) => ({ Authorization: `JWT ${token}` });
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function upload(token: string, file: Buffer): Promise<string> {
@@ -72,35 +80,29 @@ async function upload(token: string, file: Buffer): Promise<string> {
 
   const res = await fetch(`${API}/addons/upload/`, {
     method: "POST",
-    headers: { Authorization: `JWT ${token}` },
+    headers: auth(token),
     body: form,
   });
   if (!res.ok) throw new Error(`upload failed: ${res.status} ${await res.text()}`);
-  const data = (await res.json()) as { uuid: string; url: string };
+  const data = (await res.json()) as { uuid: string };
   console.log(`uploaded (uuid ${data.uuid}), waiting for validation ...`);
   return data.uuid;
 }
 
 async function waitForValidation(token: string, uuid: string): Promise<void> {
   for (let attempt = 0; attempt < 60; attempt++) {
-    const res = await fetch(`${API}/addons/upload/${uuid}/`, {
-      headers: { Authorization: `JWT ${token}` },
-    });
+    const res = await fetch(`${API}/addons/upload/${uuid}/`, { headers: auth(token) });
     if (!res.ok) throw new Error(`poll failed: ${res.status}`);
     const data = (await res.json()) as {
       processed: boolean;
       valid: boolean;
-      validation?: { errors?: number; warnings?: number; messages?: unknown[] };
+      validation?: { errors?: number; warnings?: number };
     };
     if (data.processed) {
       if (!data.valid) {
-        throw new Error(
-          `add-on failed validation:\n${JSON.stringify(data.validation, null, 2)}`,
-        );
+        throw new Error(`add-on failed validation:\n${JSON.stringify(data.validation, null, 2)}`);
       }
-      console.log(
-        `validated (warnings: ${data.validation?.warnings ?? 0}, errors: 0)`,
-      );
+      console.log(`validated (warnings: ${data.validation?.warnings ?? 0}, errors: 0)`);
       return;
     }
     await sleep(5000);
@@ -108,30 +110,41 @@ async function waitForValidation(token: string, uuid: string): Promise<void> {
   throw new Error("timed out waiting for validation");
 }
 
-async function createVersion(token: string, addonId: string, uuid: string): Promise<unknown> {
-  const res = await fetch(
-    `${API}/addons/addon/${encodeURIComponent(addonId)}/versions/`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ upload: uuid }),
-    },
-  );
-  if (res.status === 404) {
-    throw new Error(
-      `add-on "${addonId}" was not found on AMO.\n` +
-        `Create the listing once in the Developer Hub ` +
-        `(https://addons.mozilla.org/developers/addons -> Submit a New Add-on), ` +
-        `then set AMO_ADDON_ID to its slug and re-run.`,
-    );
-  }
-  if (!res.ok) {
-    throw new Error(`version creation failed: ${res.status} ${await res.text()}`);
-  }
-  return res.json();
+async function addonExists(token: string, addonId: string): Promise<boolean> {
+  const res = await fetch(`${API}/addons/addon/${encodeURIComponent(addonId)}/`, {
+    headers: auth(token),
+  });
+  if (res.status === 404) return false;
+  if (!res.ok) throw new Error(`add-on lookup failed: ${res.status} ${await res.text()}`);
+  return true;
+}
+
+async function createAddon(token: string, uuid: string): Promise<Record<string, unknown>> {
+  const body = {
+    ...LISTING,
+    version: { ...LISTING.version, upload: uuid, release_notes: { "en-US": "Initial release." } },
+  };
+  const res = await fetch(`${API}/addons/addon/`, {
+    method: "POST",
+    headers: { ...auth(token), "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`add-on creation failed: ${res.status} ${await res.text()}`);
+  return (await res.json()) as Record<string, unknown>;
+}
+
+async function createVersion(
+  token: string,
+  addonId: string,
+  uuid: string,
+): Promise<Record<string, unknown>> {
+  const res = await fetch(`${API}/addons/addon/${encodeURIComponent(addonId)}/versions/`, {
+    method: "POST",
+    headers: { ...auth(token), "Content-Type": "application/json" },
+    body: JSON.stringify({ upload: uuid }),
+  });
+  if (!res.ok) throw new Error(`version creation failed: ${res.status} ${await res.text()}`);
+  return (await res.json()) as Record<string, unknown>;
 }
 
 async function downloadSigned(url: string): Promise<void> {
@@ -139,7 +152,7 @@ async function downloadSigned(url: string): Promise<void> {
   if (!res.ok) throw new Error(`download failed: ${res.status}`);
   const dir = join(root, "web-ext-artifacts");
   mkdirSync(dir, { recursive: true });
-  const out = join(dir, `gramguru-${manifestVersion()}-signed.xpi`);
+  const out = join(dir, `gramguru-${MANIFEST.version}-signed.xpi`);
   writeFileSync(out, Buffer.from(await res.arrayBuffer()));
   console.log(`signed add-on -> ${out}`);
 }
@@ -147,24 +160,39 @@ async function downloadSigned(url: string): Promise<void> {
 async function main(): Promise<void> {
   const key = process.env.AMO_API_KEY;
   const secret = process.env.AMO_API_SECRET;
-  const addonId = process.env.AMO_ADDON_ID;
-  if (!key || !secret) {
-    throw new Error("Set AMO_API_KEY and AMO_API_SECRET (see .env.example).");
-  }
+  const addonId =
+    process.env.AMO_ADDON_ID ?? MANIFEST.browser_specific_settings?.gecko?.id;
+  if (!key || !secret) throw new Error("Set AMO_API_KEY and AMO_API_SECRET (see .env.example).");
   if (!addonId) throw new Error("Set AMO_ADDON_ID (see .env.example).");
 
   const token = makeJwt(key, secret);
   const file = readFileSync(zipPath);
-  console.log(`publishing ${basename(zipPath)} as ${channel} ...`);
+  console.log(`publishing ${basename(zipPath)} as ${channel} (add-on ${addonId}) ...`);
 
   const uuid = await upload(token, file);
   await waitForValidation(token, uuid);
+
+  const exists = await addonExists(token, addonId);
+  if (!exists) {
+    if (channel !== "listed") {
+      throw new Error(
+        `add-on "${addonId}" does not exist; create it on AMO first (unlisted add-ons can't be auto-created).`,
+      );
+    }
+    const addon = (await createAddon(token, uuid)) as {
+      slug?: string;
+      guid?: string;
+    };
+    console.log(`created listing: ${addon.slug ?? addon.guid ?? addonId}`);
+    console.log("submitted for review. Track status at https://addons.mozilla.org/developers/addons");
+    return;
+  }
+
   const version = (await createVersion(token, addonId, uuid)) as {
     version?: string;
     file?: { url?: string };
   };
   console.log(`created version ${version.version ?? "?"}`);
-
   if (channel === "listed") {
     console.log("submitted for review. Track status in the Developer Hub.");
   } else if (version.file?.url) {
