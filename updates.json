@@ -17,6 +17,10 @@
         {
           "version": "0.1.7",
           "update_link": "https://raw.githubusercontent.com/Anders-Steen/gramguru/main/beta/gramguru-beta-0.1.7.xpi"
+        },
+        {
+          "version": "0.1.8",
+          "update_link": "https://raw.githubusercontent.com/Anders-Steen/gramguru/main/beta/gramguru-beta-0.1.8.xpi"
         }
       ]
     }
