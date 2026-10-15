@@ -8,7 +8,7 @@
 
 Converts Norwegian recipe units to **grams**. That's it. That's the whole idea.
 
-`3 ss hvetemel` ➜ `27 g` · `1,5 dl melk` ➜ `150 g` · `1 pk aspill` ➜ `400 g 🤷`
+`3 ss hvetemel` ➜ `27 g` · `1,5 dl melk` ➜ `150 g` · `6 stk egg` ➜ `330 g`
 
 It also drags imperial units, kicking and screaming, into the metric age:
 `8 oz smør` ➜ `226.8 g 🔪 death to imperialism`.
@@ -32,7 +32,9 @@ pity. 🇺🇸)
   [matprat.no](https://www.matprat.no/) so `3 ss hvetemel` ≠ `3 ss sukker`.
 - ✳️ Marks every conversion inline with a dashed underline, a colored asterisk,
   and a one-time pulse — so you *definitely* notice something happened.
-- 🖱️ Hover (or tap) a mark to see `27 g (exact) 🧐` or `30 g (approx) 🤷`.
+- 🖱️ Hover (or tap) a mark to see `27 g (exact) 🧐` or `30 g (approx) 🤷 (assumed water)`.
+- 🤷 Unknown **volume** unit? It assumes water and says so (`1 dl ≈ 100 g`).
+- 🚫 Unknown **count** unit (`stk`, `pk`, `skive`, …)? It refuses to guess "1 piece = 100 g" and leaves it alone.
 - 🔢 Shows a count badge on the toolbar icon.
 - 🔌 **Zero network calls.** The density table is bundled. Your recipes stay
   yours. 🕵️
@@ -45,7 +47,8 @@ pity. 🇺🇸)
 | `1,5 dl melk` | `150 g` |
 | `0,5 ts pepper` | `1.3 g` |
 | `3 stk gulrøtter` | `270 g` |
-| `2 ss` (no ingredient, so: shrug) | `30 g (approx) 🤷` |
+| `2 ss` (no ingredient → assume water) | `30 g (approx) 🤷 (assumed water)` |
+| `3 stk` (unknown piece, so: refused) | *(left as-is)* |
 | `8 oz smør` | `226.8 g (exact) 🔪 death to imperialism` |
 
 ## Install (development)

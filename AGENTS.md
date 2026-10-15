@@ -74,8 +74,15 @@ machine — call `node` directly).
   `src/content.js` flattens each leaf block's inline text before converting and
   marks groups of spans with a shared `data-gg-id`. Keep that invariant.
 - Hover text format lives in `buildNote()` in `src/convert.js`:
-  `original = converted (exact) 🧐` (matched), `original ≈ converted (approx) 🤷`
-  (guess), `original = converted (exact) 🔪 death to imperialism` (imperial).
+  `original = converted (exact) 🧐` (matched), `original ≈ converted (approx) 🤷
+  (assumed water)` (volume fallback), `original = converted (exact) 🔪 death to
+  imperialism` (imperial).
+- Unit handling (`unitKind()`): **count** units (stk, pk, skive, neve, fedd, bunt,
+  boks, stick) are never guessed — if the ingredient weight is unknown the match
+  is dropped. **Volume** units (l, dl, ss, ts, kopp, ...) use the water fallback.
+  **Mass** units (oz, lb) are exact constants. Ingredient capture also looks at
+  the adjacent flex/grid cell (tine.no puts amount and ingredient in separate
+  cells) and falls back to compound-word suffix matching (lettmelk → melk).
 
 ## Extending the data
 
