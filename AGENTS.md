@@ -23,6 +23,12 @@ No runtime network access; the density table is bundled.
 4. **Never commit secrets.** `.env` is git-ignored.
 5. **The AMO answer is "No build tools."** Don't reintroduce anything that
    processes source into shipped files, or this changes.
+6. **Do not spam the AMO API.** It hard-throttles per account: HTTP `429` with a
+   `Retry-After` that escalates fast (minutes → **~18 hours** after a burst).
+   Run `scripts/publish.js` / `scripts/upload-media.js` **once**, never in a
+   retry loop, and space out media writes. If you get a `429` with a long retry,
+   **STOP and wait** — do not keep hammering it (that's what lengthened the
+   ban). `upload-media.js` already bails out instead of sleeping for hours.
 
 ## Layout
 
