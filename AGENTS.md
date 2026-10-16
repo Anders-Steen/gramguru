@@ -126,10 +126,17 @@ future fallback source. If you add it, keep `src/data.js` shape stable
   publishes the `manifest.json` version to the **listed** channel. ⚠️ **Disabled
   for now** (runs only via `workflow_dispatch`) because of AMO throttling —
   re-enable the `push:` trigger when clear.
-- **Version format:** AMO/MV3 requires 1–4 dot-separated numbers, ≤9 digits each,
-  **no letters or hyphens** (verified — `0.1.14-b` is rejected). So: release =
-  `manifest.json` version (bump it in the PR); beta = `<manifest.version>.<github.run_number>`.
-  The "`-b`"/prerelease distinction lives in the **GitHub tag/release** (`beta`), not the manifest.
+- **Versioning (hybrid — read this):** AMO/MV3 requires `manifest.version` to be
+  1–4 dot-separated numbers, ≤9 digits, **no letters or hyphens** (verified:
+  `0.1.13-beta.3` is rejected — _"should be simplified"_). So a semver pre-release
+  **cannot** be the manifest version. Instead:
+  - **Release:** `manifest.json` is plain semver `MAJOR.MINOR.PATCH`; the git
+    tag/Release is `v<core>`.
+  - **Beta:** manifest `version` = `<core>.<run_number>` (MV3-legal, numeric,
+    monotonic); the **git tag/Release** is `v<core>-beta.<run_number>` — that's the
+    semver pre-release (semver.org item 9). The **rolling** prerelease Release
+    tagged `beta` hosts the **stable** `updates.json` + `gramguru-beta.xpi` URLs that
+    the manifest's `update_url` points at.
 - Required repo secrets: `AMO_API_KEY`, `AMO_API_SECRET`, `AMO_ADDON_ID`
   (listed), `BETA_ADDON_ID` (unlisted). Never commit these. There is no
   `web-ext-artifacts/` or `beta/` committed — artifacts go to GitHub Releases.
