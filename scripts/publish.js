@@ -59,6 +59,31 @@ const freshAuth = () => ({
   Authorization: `JWT ${makeJwt(process.env.AMO_API_KEY, process.env.AMO_API_SECRET)}`,
 });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// AMO hard-throttles (HTTP 429) per account. Retry short windows, but give up
+// if it asks us to wait longer than MAX_THROTTLE_WAIT seconds (default 10 min)
+// so CI doesn't hang for hours. See AGENTS.md rule #6.
+const MAX_THROTTLE_WAIT = Number(process.env.THROTTLE_WAIT ?? 600);
+async function fetchRetry(url, init = {}) {
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const res = await fetch(url, {
+      ...init,
+      headers: { ...freshAuth(), ...(init.headers ?? {}) },
+    });
+    if (res.status !== 429) return res;
+    const retryAfter = Number(res.headers.get("retry-after") || 0);
+    const detail = await res
+      .json()
+      .then((b) => b.detail ?? "")
+      .catch(() => "");
+    const secs = retryAfter || Number((/in (\d+) seconds/.exec(detail) ?? [])[1] ?? 30);
+    if (secs > MAX_THROTTLE_WAIT) throw new Error(`AMO throttled for ${secs}s — too long to wait`);
+    console.log(`  throttled; waiting ${secs}s ...`);
+    await sleep((secs + 2) * 1000);
+  }
+  throw new Error("still throttled after retries");
+}
+
 async function upload(file) {
   const form = new FormData();
   form.append(
@@ -67,11 +92,7 @@ async function upload(file) {
     basename(zipPath),
   );
   form.append("channel", channel);
-  const res = await fetch(`${API}/addons/upload/`, {
-    method: "POST",
-    headers: freshAuth(),
-    body: form,
-  });
+  const res = await fetchRetry(`${API}/addons/upload/`, { method: "POST", body: form });
   if (!res.ok) throw new Error(`upload failed: ${res.status} ${await res.text()}`);
   const data = await res.json();
   console.log(`uploaded (uuid ${data.uuid}), waiting for validation ...`);
@@ -79,7 +100,7 @@ async function upload(file) {
 }
 async function waitForValidation(uuid) {
   for (let attempt = 0; attempt < 60; attempt++) {
-    const res = await fetch(`${API}/addons/upload/${uuid}/`, { headers: freshAuth() });
+    const res = await fetchRetry(`${API}/addons/upload/${uuid}/`);
     if (!res.ok) throw new Error(`poll failed: ${res.status}`);
     const data = await res.json();
     if (data.processed) {
@@ -94,9 +115,7 @@ async function waitForValidation(uuid) {
   throw new Error("timed out waiting for validation");
 }
 async function addonExists(addonId) {
-  const res = await fetch(`${API}/addons/addon/${encodeURIComponent(addonId)}/`, {
-    headers: freshAuth(),
-  });
+  const res = await fetchRetry(`${API}/addons/addon/${encodeURIComponent(addonId)}/`);
   if (res.status === 404) return false;
   if (!res.ok) throw new Error(`add-on lookup failed: ${res.status} ${await res.text()}`);
   return true;
@@ -106,18 +125,18 @@ async function createAddon(uuid) {
     ...LISTING,
     version: { ...LISTING.version, upload: uuid, release_notes: { "en-US": "Initial release." } },
   };
-  const res = await fetch(`${API}/addons/addon/`, {
+  const res = await fetchRetry(`${API}/addons/addon/`, {
     method: "POST",
-    headers: { ...freshAuth(), "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`add-on creation failed: ${res.status} ${await res.text()}`);
   return await res.json();
 }
 async function createVersion(addonId, uuid) {
-  const res = await fetch(`${API}/addons/addon/${encodeURIComponent(addonId)}/versions/`, {
+  const res = await fetchRetry(`${API}/addons/addon/${encodeURIComponent(addonId)}/versions/`, {
     method: "POST",
-    headers: { ...freshAuth(), "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ upload: uuid }),
   });
   if (!res.ok) throw new Error(`version creation failed: ${res.status} ${await res.text()}`);
@@ -131,9 +150,8 @@ async function waitForSigned(addonId, version, initialUrl) {
   for (let i = 0; i < attempts; i++) {
     if (url && url.endsWith(".xpi")) return url;
     await sleep(5000);
-    const res = await fetch(
+    const res = await fetchRetry(
       `${API}/addons/addon/${encodeURIComponent(addonId)}/versions/${encodeURIComponent(version)}/`,
-      { headers: freshAuth() },
     );
     if (res.ok) {
       const v = await res.json();
@@ -149,7 +167,7 @@ async function downloadSigned(url) {
   // The AMO download link for an unlisted add-on requires auth (it's the
   // developer copy), so send the JWT. Saved under a stable name so it can be
   // attached to the GitHub "beta" release at a fixed asset URL.
-  const res = await fetch(url, { headers: freshAuth() });
+  const res = await fetchRetry(url);
   if (!res.ok) throw new Error(`download failed: ${res.status}`);
   const dir = join(root, "web-ext-artifacts");
   mkdirSync(dir, { recursive: true });
