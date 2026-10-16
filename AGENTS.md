@@ -120,23 +120,24 @@ future fallback source. If you add it, keep `src/data.js` shape stable
   commit, push it, open a PR (`gh pr create`), and **auto-merge** it
   (`gh pr merge --squash --delete-branch`) unless told otherwise.
 - **Branches → beta.** Pushing a non-`main` branch runs `.github/workflows/beta.yml`:
-  package a beta, publish it to the **unlisted/beta** add-on, and attach the signed
-  XPI + `updates.json` to the GitHub Release tagged **`beta`** (prerelease).
+  package a beta, publish it to the **unlisted/beta** add-on, refresh the **rolling**
+  prerelease Release tagged `beta` (stable `updates.json` + `gramguru-beta.xpi` URLs),
+  and create a per-build prerelease `v<core>-beta.<n>` holding the signed XPI.
 - **`main` → release.** Merging to `main` runs `.github/workflows/release.yml` and
-  publishes the `manifest.json` version to the **listed** channel. ⚠️ **Disabled
-  for now** (runs only via `workflow_dispatch`) because of AMO throttling —
-  re-enable the `push:` trigger when clear.
+  publishes the `manifest.json` version to the **listed** channel. Stable releases
+  live on **Mozilla only** — no GitHub Release/tag is created for them (GitHub
+  Releases are for beta pre-releases; GitHub also attaches the source archives).
 - **Versioning (hybrid — read this):** AMO/MV3 requires `manifest.version` to be
   1–4 dot-separated numbers, ≤9 digits, **no letters or hyphens** (verified:
   `0.1.13-beta.3` is rejected — _"should be simplified"_). So a semver pre-release
   **cannot** be the manifest version. Instead:
-  - **Release:** `manifest.json` is plain semver `MAJOR.MINOR.PATCH`; the git
-    tag/Release is `v<core>`.
+  - **Release:** `manifest.json` is plain semver `MAJOR.MINOR.PATCH`.
   - **Beta:** manifest `version` = `<core>.<run_number>` (MV3-legal, numeric,
-    monotonic); the **git tag/Release** is `v<core>-beta.<run_number>` — that's the
-    semver pre-release (semver.org item 9). The **rolling** prerelease Release
-    tagged `beta` hosts the **stable** `updates.json` + `gramguru-beta.xpi` URLs that
-    the manifest's `update_url` points at.
+    monotonic); the GitHub **tag/Release** is `v<core>-beta.<run_number>` — that's
+    the semver pre-release (semver.org item 9).
+- Required repo secrets: `AMO_API_KEY`, `AMO_API_SECRET`, `AMO_ADDON_ID`
+  (listed), `BETA_ADDON_ID` (unlisted). Never commit these. Nothing under
+  `web-ext-artifacts/` or `beta/` is committed — beta artifacts go to GitHub Releases.
 - Required repo secrets: `AMO_API_KEY`, `AMO_API_SECRET`, `AMO_ADDON_ID`
   (listed), `BETA_ADDON_ID` (unlisted). Never commit these. There is no
   `web-ext-artifacts/` or `beta/` committed — artifacts go to GitHub Releases.

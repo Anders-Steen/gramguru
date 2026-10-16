@@ -1,10 +1,7 @@
 # GramGuru 🧐
 
 > **⚠️ VIBE-CODED ⚠️**
-> This extension was written largely by an AI, late, while its human watched a
-> movie and muttered "ss… but how many _grams_?" Treat it like a friendly
-> labradoodle: delightful, mostly harmless, occasionally eats your slippers.
-> Review before you trust it with your grandmother's kjøttkaker. 🍖
+> Written largely by an AI. Review before you trust it.
 
 Converts recipe units to **grams** — Norwegian (`ss`, `dl`, `kopp`) and imperial
 (`cups`, `oz`, `lb`). That's it. That's the whole idea.

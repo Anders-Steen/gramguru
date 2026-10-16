@@ -64,10 +64,10 @@ jobs:
           gh release upload beta updates.json web-ext-artifacts/gramguru-beta.xpi --clobber
           gh release edit beta --title "Beta ${{ steps.v.outputs.tag }}"
 
-          # Per-build semver pre-release, for traceability.
+          # Per-build semver pre-release, for traceability. Signed XPI only;
+          # GitHub attaches the source archives itself.
           gh release create "${{ steps.v.outputs.tag }}" \
             --prerelease \
             --title "${{ steps.v.outputs.tag }}" \
             --notes "Beta build ${{ steps.v.outputs.manifest }}" \
-            "web-ext-artifacts/gramguru-beta-${{ steps.v.outputs.manifest }}.zip" \
             web-ext-artifacts/gramguru-beta.xpi
