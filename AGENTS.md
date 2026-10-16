@@ -119,15 +119,20 @@ future fallback source. If you add it, keep `src/data.js` shape stable
 - **Every new version goes through a pull request.** Create a feature branch,
   commit, push it, open a PR (`gh pr create`), and **auto-merge** it
   (`gh pr merge --squash --delete-branch`) unless told otherwise.
-- **Branches → beta.** Pushing any non-`main` branch runs `.github/workflows/beta.yml`,
-  which builds a beta and publishes it to the **unlisted/beta** add-on.
-- **`main` → release.** Merging to `main` runs `.github/workflows/release.yml`,
-  which publishes the version in `manifest.json` to the **listed** channel.
-- Beta version = `<manifest.version>.<github.run_number>` (MV3 forbids letters in
-  versions), so every branch build is unique. Bump `manifest.json` in the PR when
-  you want a new release number.
+- **Branches → beta.** Pushing a non-`main` branch runs `.github/workflows/beta.yml`:
+  package a beta, publish it to the **unlisted/beta** add-on, and attach the signed
+  XPI + `updates.json` to the GitHub Release tagged **`beta`** (prerelease).
+- **`main` → release.** Merging to `main` runs `.github/workflows/release.yml` and
+  publishes the `manifest.json` version to the **listed** channel. ⚠️ **Disabled
+  for now** (runs only via `workflow_dispatch`) because of AMO throttling —
+  re-enable the `push:` trigger when clear.
+- **Version format:** AMO/MV3 requires 1–4 dot-separated numbers, ≤9 digits each,
+  **no letters or hyphens** (verified — `0.1.14-b` is rejected). So: release =
+  `manifest.json` version (bump it in the PR); beta = `<manifest.version>.<github.run_number>`.
+  The "`-b`"/prerelease distinction lives in the **GitHub tag/release** (`beta`), not the manifest.
 - Required repo secrets: `AMO_API_KEY`, `AMO_API_SECRET`, `AMO_ADDON_ID`
-  (listed), `BETA_ADDON_ID` (unlisted). Never commit these.
+  (listed), `BETA_ADDON_ID` (unlisted). Never commit these. There is no
+  `web-ext-artifacts/` or `beta/` committed — artifacts go to GitHub Releases.
 
 ## Publishing
 
@@ -136,16 +141,15 @@ See README "Publish to addons.mozilla.org". `scripts/publish.js` reads
 It creates the listing if it doesn't exist yet, otherwise adds a version.
 
 Beta channel (unlisted/self-distributed): built with `node scripts/package.js --beta`
-(id `gramguru-beta@anderss`, `update_url` → `updates.json`). Publishing unlisted
-(`--channel unlisted`, `AMO_ADDON_ID=gramguru-beta@anderss`; source `.env` then
-override `AMO_ADDON_ID`) downloads the AMO-signed XPI into `beta/` (the AMO
-download link needs the JWT) and appends `{version, update_link}` to
-`updates.json` via `recordUpdate()`, where `update_link` is the repo raw URL
-(`REPO_RAW_BASE`). Commit + push `beta/` and `updates.json` so installed betas
-pick up the update. Firefox only ever reads the `update_url` from the installed
-version, so it must ship in the first build. Unlisted signing is async — the
-backend `file.status` flips from `unreviewed` to `public` (and `.zip` → `.xpi`)
-after ~45s.
+(id `gramguru-beta@anderss`; `update_url` → the `beta` release's `updates.json`).
+`scripts/publish.js --channel unlisted` (`AMO_ADDON_ID=gramguru-beta@anderss`)
+downloads the AMO-signed XPI to `web-ext-artifacts/gramguru-beta.xpi` and records
+`{version, update_link}` in `updates.json`, where `update_link` is the `beta`
+release asset (`BETA_XPI_URL`). Both are then uploaded with
+`gh release upload beta updates.json web-ext-artifacts/gramguru-beta.xpi --clobber`
+— **nothing is committed to git**. Firefox keeps the `update_url` baked into the
+installed version, so it must ship in the first build; unlisted signing is async
+(`unreviewed` → `public`, `.zip` → `.xpi`). Hosting URLs live in `scripts/repo.js`.
 
 ## When something is ambiguous
 
