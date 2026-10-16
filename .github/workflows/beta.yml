@@ -1,8 +1,16 @@
 name: beta
 
 # Push a non-main branch -> build a beta and publish it to the unlisted/beta
-# add-on. The signed XPI + update manifest are attached to the GitHub "beta"
-# release (prerelease), which is what the add-on's update_url points at.
+# add-on.
+#
+# Versioning (hybrid, because AMO/MV3 forbids letters/hyphens in the manifest
+# `version`, so a semver pre-release like `0.1.13-beta.3` can't go in it):
+#   - semver identity:  git tag / release  v<core>-beta.<n>   (semver item 9)
+#   - manifest version: <core>.<n>                            (MV3-legal, numeric)
+# where <core> = manifest.json version (MAJOR.MINOR.PATCH) and <n> = run number.
+#
+# The rolling, prerelease Release tagged `beta` always hosts the signed XPI and
+# updates.json under STABLE urls — that's what the add-on's update_url points at.
 on:
   push:
     branches-ignore: [main]
@@ -20,14 +28,20 @@ jobs:
         with:
           node-version: "22"
 
-      # MV3 versions must be numeric, so beta = <manifest version>.<run number>.
-      - name: Compute beta version
+      - name: Compute versions
         id: v
-        run: echo "value=$(node -p "require('./manifest.json').version").${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+        run: |
+          core=$(node -p "require('./manifest.json').version")
+          n="${{ github.run_number }}"
+          {
+            echo "core=$core"
+            echo "manifest=$core.$n"
+            echo "tag=v$core-beta.$n"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Package beta
         env:
-          BETA_VERSION: ${{ steps.v.outputs.value }}
+          BETA_VERSION: ${{ steps.v.outputs.manifest }}
         run: node scripts/package.js --beta
 
       - name: Publish to the beta (unlisted) channel
@@ -38,13 +52,22 @@ jobs:
           SIGN_WAIT: "120" # wait up to 10 min for signing
         run: |
           node scripts/publish.js --channel unlisted \
-            --zip "web-ext-artifacts/gramguru-beta-${{ steps.v.outputs.value }}.zip"
+            --zip "web-ext-artifacts/gramguru-beta-${{ steps.v.outputs.manifest }}.zip"
 
-      - name: Attach the signed XPI + update manifest to the 'beta' release
+      - name: Publish beta artifacts
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Rolling release: STABLE urls for the add-on's update_url/update_link.
           gh release view beta >/dev/null 2>&1 || \
-            gh release create beta --prerelease --title "Beta channel" --notes "Rolling beta builds."
+            gh release create beta --prerelease --title "Beta channel" --notes "Rolling beta channel (stable update urls)."
           gh release upload beta updates.json web-ext-artifacts/gramguru-beta.xpi --clobber
-          gh release edit beta --title "Beta ${{ steps.v.outputs.value }}"
+          gh release edit beta --title "Beta ${{ steps.v.outputs.tag }}"
+
+          # Per-build semver pre-release, for traceability.
+          gh release create "${{ steps.v.outputs.tag }}" \
+            --prerelease \
+            --title "${{ steps.v.outputs.tag }}" \
+            --notes "Beta build ${{ steps.v.outputs.manifest }}" \
+            "web-ext-artifacts/gramguru-beta-${{ steps.v.outputs.manifest }}.zip" \
+            web-ext-artifacts/gramguru-beta.xpi

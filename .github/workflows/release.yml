@@ -2,13 +2,16 @@ name: release
 
 # DISABLED for now: AMO throttling. Re-enable the push trigger when the throttle
 # is clear (see AGENTS.md rule #6). Run manually from the Actions tab meanwhile.
+#
+# Release versioning: plain semver MAJOR.MINOR.PATCH in manifest.json; the git
+# tag / GitHub Release is `v<core>`.
 on:
   workflow_dispatch:
   # push:
   #   branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   release:
@@ -31,3 +34,12 @@ jobs:
         run: |
           node scripts/publish.js --channel listed \
             --zip "web-ext-artifacts/gramguru-$(node -p "require('./manifest.json').version").zip"
+
+      - name: Tag the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          core=$(node -p "require('./manifest.json').version")
+          gh release view "v$core" >/dev/null 2>&1 || \
+            gh release create "v$core" --title "v$core" --notes "Release $core" \
+              "web-ext-artifacts/gramguru-$core.zip"
