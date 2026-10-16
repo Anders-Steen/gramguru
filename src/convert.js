@@ -396,16 +396,17 @@ export function convertText(text, fallbackIngredient = "") {
       if (kind === "mass") {
         // oz/lb are exact constants regardless of ingredient.
         grams = quantity * def.generic * (def.mul ?? 1);
+      } else if (kind === "count") {
+        // Unknown count unit ("8.657 pakker" in prose): ignore — too noisy.
+        MATCH_RE.lastIndex = end;
+        continue;
       } else {
-        // Unknown ingredient: don't guess a single value. Keep the original
-        // and offer liquid (water) + dry (flour) estimates instead.
+        // Unknown volume: offer liquid (water) + dry (flour) estimates.
         unknown = true;
-        if (kind === "volume") {
-          const liquid = quantity * def.generic * (def.mul ?? 1);
-          const flourPer = FLOUR ? FLOUR[def.key] : undefined;
-          const dry = flourPer !== undefined ? quantity * flourPer * (def.mul ?? 1) : null;
-          estimates = { liquid: shortNumber(liquid), dry: dry !== null ? shortNumber(dry) : null };
-        }
+        const liquid = quantity * def.generic * (def.mul ?? 1);
+        const flourPer = FLOUR ? FLOUR[def.key] : undefined;
+        const dry = flourPer !== undefined ? quantity * flourPer * (def.mul ?? 1) : null;
+        estimates = { liquid: shortNumber(liquid), dry: dry !== null ? shortNumber(dry) : null };
       }
     }
     const original = text.slice(m.index, unitEnd);
@@ -437,9 +438,8 @@ export function convertText(text, fallbackIngredient = "") {
   }
   return matches;
 }
-// What the mark shows on the page: the metric value, or — for an unknown
-// ingredient — the "X/Y g wet/dry" estimates, or the original amount for an
-// unknown count unit. Single source of truth for the inline text.
+// What the mark shows on the page: the metric value, or — for an unknown volume
+// unit — the "X/Y g wet/dry" estimates. Single source of truth for the inline text.
 function inlineText({ unknown, estimates, original, metric }) {
   if (!unknown) return metric;
   if (estimates)

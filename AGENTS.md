@@ -84,7 +84,8 @@ machine — call `node` directly).
   Volume units also get `estimates` `{liquid, dry}` (water vs wheat flour).
 - On the page (`src/content.js` `makeSpan()`): known → the metric value; unknown →
   class `gg-unknown` with the estimates inline (`30/18 g wet/dry`) for volume, or
-  the original amount+unit for count. Marks add **no underline** — only a
+  unknown **count** units are ignored (prose false positives like "8.657 pakker").
+  Marks add **no underline** — only a
   background tint + emoji badge — so they don't fight the page's own styling.
   Estimates are short-numbered (no decimals ≥ 20 g) and the tooltip is two lines
   (`30 g if wet` / `18 g if dry`), rendered via `white-space: pre-line`.

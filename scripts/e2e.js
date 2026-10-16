@@ -33,8 +33,8 @@ const SITES = [
     expect: [
       { original: "3 ss hvetemel", shown: "27 g", visible: "27 g hvetemel" },
       { original: "1,5 dl melk", shown: "150 g", visible: "150 g melk" },
-      { original: "1 pk aspik", shown: "1 pk", unknown: true },
     ],
+    absent: ["1 pk aspik"],
     minMarks: 10,
   },
   {
@@ -55,8 +55,8 @@ const SITES = [
       { original: "3 stk. løk", shown: "510 g", visible: "510 g løk" },
       { original: "5 dl kjøttkraft", shown: "500 g", visible: "500 g kjøttkraft" },
       { original: "0,5 ts salt", shown: "3.5 g", visible: "3.5 g salt" },
-      { original: "2 stk. laurbærblad", shown: "2 stk.", unknown: true },
     ],
+    absent: ["laurbærblad"],
     minMarks: 9,
   },
   {
@@ -133,6 +133,14 @@ const SITES = [
       { original: "1 cup finely grated Parmesan", shown: "94.6 g" },
     ],
     minMarks: 6,
+  },
+  {
+    // News page: "8.657 pakker" etc. must NOT be converted.
+    name: "nrk news (no false positives)",
+    url: "https://www.nrk.no/trondelag/8.657-pakker-ligger-klare-til-a-hentes-i-trondelag-1.17706585",
+    expect: [],
+    absent: ["pakker"],
+    minMarks: 0,
   },
 ];
 class Bidi {

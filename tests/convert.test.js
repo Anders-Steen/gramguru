@@ -50,12 +50,9 @@ test("unknown volume keeps the original and offers liquid + dry estimates", () =
   assert.deepEqual(m.estimates, { liquid: "30", dry: "18" });
   assert.equal(m.note, "2 ss\n30 g if wet\n18 g if dry 🤷");
 });
-test("count units of unknown origin are marked unknown, not guessed", () => {
-  const m = first("3 stk");
-  assert.equal(m.unknown, true);
-  assert.equal(m.grams, null);
-  assert.equal(m.original, "3 stk");
-  assert.equal(m.note, "3 stk — ingredient not recognised 🤷");
+test("unknown count units are ignored (avoids prose false positives)", () => {
+  assert.equal(convertText("3 stk").length, 0);
+  assert.equal(convertText("8.657 pakker").length, 0);
 });
 
 test("count units with a known ingredient convert exactly", () => {

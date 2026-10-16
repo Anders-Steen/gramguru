@@ -79,9 +79,9 @@ function collectLeafBlocks(root, out) {
   for (const child of blockChildren) collectLeafBlocks(child, out);
 }
 // One span per conversion. The visible text is `match.display` (built by
-// convert.js): the metric value, the "X/Y g wet/dry" estimates, or the original
-// amount. The full note lives in the tooltip (title + data-gg-tip); the matched
-// original is kept in data-gg-original.
+// convert.js): the metric value, or the "X/Y g wet/dry" estimates for an unknown
+// volume unit. The full note lives in the tooltip (title + data-gg-tip); the
+// matched original is kept in data-gg-original.
 function makeSpan(match, id) {
   const span = document.createElement("span");
   span.className =

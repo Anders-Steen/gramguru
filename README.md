@@ -36,10 +36,11 @@ pity. 🇺🇸)
   and an emoji badge that matches the tooltip: **🧐** exact · **🔪** imperial · **🤷** unknown.
   (No added underline — we don't fight the page's own styling.)
 - 🖱️ Hover (or tap) a mark to see e.g. `27 g (exact) 🧐`.
-- 🤷 **Unknown ingredient?** It never invents a single number: it shows **both**
-  estimates inline — `30/18 g wet/dry 🤷` — and the tooltip spells them out on two
-  lines (`30 g if wet` / `18 g if dry`). Values ≥ 20 drop decimals. (Unknown
-  _count_ units keep the original.)
+- 🤷 **Unknown ingredient (volume)?** It never invents a single number: it shows
+  **both** estimates inline — `30/18 g wet/dry 🤷` — and the tooltip spells them
+  out on two lines (`30 g if wet` / `18 g if dry`). Values ≥ 20 drop decimals.
+  Unknown **count** units (`stk`, `pk`, …) are ignored, so news prose like
+  "8.657 pakker" is left alone.
 - 🔢 Shows a count badge on the toolbar icon.
 - 🔌 **Zero network calls.** The density tables are bundled. Your recipes stay
   yours. 🕵️
@@ -54,7 +55,7 @@ pity. 🇺🇸)
 | `3 stk gulrøtter`       | `270 g`                                                       |
 | `1 cup cheddar`         | `100 g`                                                       |
 | `2 ss` (unknown)        | `30/18 g wet/dry` 🤷 — tooltip: `30 g if wet` / `18 g if dry` |
-| `3 stk` (unknown piece) | `3 stk` 🤷 — tooltip: `ingredient not recognised`             |
+| `3 stk` (unknown piece) | _(ignored — too noisy in prose)_                              |
 | `8 oz smør`             | `226.8 g (exact) 🔪`                                          |
 
 ## Screenshots
