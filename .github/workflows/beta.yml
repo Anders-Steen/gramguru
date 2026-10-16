@@ -1,7 +1,8 @@
 name: beta
 
 # Push a non-main branch -> build a beta and publish it to the unlisted/beta
-# add-on. The signed XPI + update manifest are committed back to the branch.
+# add-on. The signed XPI + update manifest are attached to the GitHub "beta"
+# release (prerelease), which is what the add-on's update_url points at.
 on:
   push:
     branches-ignore: [main]
@@ -39,10 +40,11 @@ jobs:
           node scripts/publish.js --channel unlisted \
             --zip "web-ext-artifacts/gramguru-beta-${{ steps.v.outputs.value }}.zip"
 
-      - name: Commit the signed XPI + update manifest back to the branch
+      - name: Attach the signed XPI + update manifest to the 'beta' release
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add beta updates.json
-          git diff --staged --quiet || git commit -m "beta ${{ steps.v.outputs.value }}"
-          git push
+          gh release view beta >/dev/null 2>&1 || \
+            gh release create beta --prerelease --title "Beta channel" --notes "Rolling beta builds."
+          gh release upload beta updates.json web-ext-artifacts/gramguru-beta.xpi --clobber
+          gh release edit beta --title "Beta ${{ steps.v.outputs.value }}"

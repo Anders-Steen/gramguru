@@ -17,11 +17,11 @@ import { createHmac, randomBytes } from "node:crypto";
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { basename, join } from "node:path";
-import { REPO_RAW_BASE } from "./repo.js";
+import { BETA_XPI_URL } from "./repo.js";
 const API = "https://addons.mozilla.org/api/v5";
 const root = fileURLToPath(new URL("..", import.meta.url));
-// Self-distributed add-ons aren't hosted on AMO, so the signed XPI is committed
-// under beta/ and served over HTTPS from the public repo (see scripts/repo.js).
+// Self-distributed add-ons aren't hosted on AMO, so the signed XPI + update
+// manifest are published as GitHub Release assets (tag "beta"; see scripts/repo.js).
 const MANIFEST = JSON.parse(readFileSync(join(root, "manifest.json"), "utf8"));
 const LISTING = {
   slug: process.env.AMO_SLUG ?? "gramguru",
@@ -145,14 +145,15 @@ async function waitForSigned(addonId, version, initialUrl) {
   }
   throw new Error("timed out waiting for the signed XPI");
 }
-async function downloadSigned(url, version) {
+async function downloadSigned(url) {
   // The AMO download link for an unlisted add-on requires auth (it's the
-  // developer copy), so send the JWT.
+  // developer copy), so send the JWT. Saved under a stable name so it can be
+  // attached to the GitHub "beta" release at a fixed asset URL.
   const res = await fetch(url, { headers: freshAuth() });
   if (!res.ok) throw new Error(`download failed: ${res.status}`);
-  const dir = join(root, "beta");
+  const dir = join(root, "web-ext-artifacts");
   mkdirSync(dir, { recursive: true });
-  const out = join(dir, `gramguru-beta-${version}.xpi`);
+  const out = join(dir, "gramguru-beta.xpi");
   writeFileSync(out, Buffer.from(await res.arrayBuffer()));
   console.log(`signed add-on -> ${out}`);
   return out;
@@ -173,7 +174,7 @@ function recordUpdate(addonId, version, updateLink) {
   entry.updates.push({ version, update_link: updateLink });
   entry.updates.sort((a, b) => a.version.localeCompare(b.version, undefined, { numeric: true }));
   writeFileSync(UPDATES_MANIFEST, JSON.stringify(doc, null, 2) + "\n");
-  console.log(`recorded ${version} in updates.json — commit & push to deliver the update`);
+  console.log(`recorded ${version} in updates.json — attach it to the 'beta' release to deliver`);
 }
 async function main() {
   const key = process.env.AMO_API_KEY;
@@ -206,11 +207,12 @@ async function main() {
   } else {
     const ver = version.version ?? MANIFEST.version;
     const signedUrl = await waitForSigned(addonId, ver, version.file?.url);
-    const signedPath = await downloadSigned(signedUrl, ver);
-    const updateLink = `${REPO_RAW_BASE}/beta/${basename(signedPath)}`;
-    recordUpdate(addonId, ver, updateLink);
-    console.log(`update_link -> ${updateLink}`);
-    console.log("commit beta/ and updates.json, then push to deliver the update.");
+    await downloadSigned(signedUrl);
+    recordUpdate(addonId, ver, BETA_XPI_URL);
+    console.log(`update_link -> ${BETA_XPI_URL}`);
+    console.log(
+      "next: attach updates.json + web-ext-artifacts/gramguru-beta.xpi to the 'beta' GitHub release.",
+    );
   }
 }
 main().catch((err) => {

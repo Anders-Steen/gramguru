@@ -1,9 +1,11 @@
 name: release
 
-# Merge to main -> publish the version in manifest.json to the listed channel.
+# DISABLED for now: AMO throttling. Re-enable the push trigger when the throttle
+# is clear (see AGENTS.md rule #6). Run manually from the Actions tab meanwhile.
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
 
 permissions:
   contents: read

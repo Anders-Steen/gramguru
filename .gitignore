@@ -3,3 +3,6 @@ web-ext-artifacts/
 .env
 *.zip
 .DS_Store
+# Beta artifacts are published as GitHub Release assets (tag "beta"), not committed.
+beta/
+updates.json
