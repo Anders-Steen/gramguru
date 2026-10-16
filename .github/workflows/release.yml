@@ -1,0 +1,31 @@
+name: release
+
+# Merge to main -> publish the version in manifest.json to the listed channel.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Package
+        run: node scripts/package.js
+
+      - name: Publish to the listed channel
+        env:
+          AMO_API_KEY: ${{ secrets.AMO_API_KEY }}
+          AMO_API_SECRET: ${{ secrets.AMO_API_SECRET }}
+          AMO_ADDON_ID: ${{ secrets.AMO_ADDON_ID }}
+        run: |
+          node scripts/publish.js --channel listed \
+            --zip "web-ext-artifacts/gramguru-$(node -p "require('./manifest.json').version").zip"

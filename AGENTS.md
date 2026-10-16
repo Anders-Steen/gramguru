@@ -114,6 +114,21 @@ matvaretabellen.no (`https://www.matvaretabellen.no/api/nb/foods.json`) as a
 future fallback source. If you add it, keep `src/data.js` shape stable
 (`[{ n: name, u: { unitKey: gramsPerUnit } }]`).
 
+## Releases & pull requests
+
+- **Every new version goes through a pull request.** Create a feature branch,
+  commit, push it, open a PR (`gh pr create`), and **auto-merge** it
+  (`gh pr merge --squash --delete-branch`) unless told otherwise.
+- **Branches → beta.** Pushing any non-`main` branch runs `.github/workflows/beta.yml`,
+  which builds a beta and publishes it to the **unlisted/beta** add-on.
+- **`main` → release.** Merging to `main` runs `.github/workflows/release.yml`,
+  which publishes the version in `manifest.json` to the **listed** channel.
+- Beta version = `<manifest.version>.<github.run_number>` (MV3 forbids letters in
+  versions), so every branch build is unique. Bump `manifest.json` in the PR when
+  you want a new release number.
+- Required repo secrets: `AMO_API_KEY`, `AMO_API_SECRET`, `AMO_ADDON_ID`
+  (listed), `BETA_ADDON_ID` (unlisted). Never commit these.
+
 ## Publishing
 
 See README "Publish to addons.mozilla.org". `scripts/publish.js` reads

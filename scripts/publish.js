@@ -126,8 +126,9 @@ async function createVersion(addonId, uuid) {
 // Unlisted signing is async: file.status goes unreviewed -> public and the
 // url switches from .zip to .xpi. Wait for the signed .xpi before downloading.
 async function waitForSigned(addonId, version, initialUrl) {
+  const attempts = Number(process.env.SIGN_WAIT ?? 90); // × 5 s (default 7.5 min)
   let url = initialUrl;
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < attempts; i++) {
     if (url && url.endsWith(".xpi")) return url;
     await sleep(5000);
     const res = await fetch(

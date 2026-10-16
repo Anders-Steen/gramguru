@@ -1,0 +1,48 @@
+name: beta
+
+# Push a non-main branch -> build a beta and publish it to the unlisted/beta
+# add-on. The signed XPI + update manifest are committed back to the branch.
+on:
+  push:
+    branches-ignore: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  beta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # MV3 versions must be numeric, so beta = <manifest version>.<run number>.
+      - name: Compute beta version
+        id: v
+        run: echo "value=$(node -p "require('./manifest.json').version").${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Package beta
+        env:
+          BETA_VERSION: ${{ steps.v.outputs.value }}
+        run: node scripts/package.js --beta
+
+      - name: Publish to the beta (unlisted) channel
+        env:
+          AMO_API_KEY: ${{ secrets.AMO_API_KEY }}
+          AMO_API_SECRET: ${{ secrets.AMO_API_SECRET }}
+          AMO_ADDON_ID: ${{ secrets.BETA_ADDON_ID }}
+          SIGN_WAIT: "120" # wait up to 10 min for signing
+        run: |
+          node scripts/publish.js --channel unlisted \
+            --zip "web-ext-artifacts/gramguru-beta-${{ steps.v.outputs.value }}.zip"
+
+      - name: Commit the signed XPI + update manifest back to the branch
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add beta updates.json
+          git diff --staged --quiet || git commit -m "beta ${{ steps.v.outputs.value }}"
+          git push
