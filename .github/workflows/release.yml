@@ -1,14 +1,11 @@
 name: release
 
-# DISABLED for now: AMO throttling. Re-enable the push trigger when the throttle
-# is clear (see AGENTS.md rule #6). Run manually from the Actions tab meanwhile.
-#
 # Release versioning: plain semver MAJOR.MINOR.PATCH in manifest.json; the git
 # tag / GitHub Release is `v<core>`.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
-  # push:
-  #   branches: [main]
 
 permissions:
   contents: write
