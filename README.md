@@ -6,7 +6,8 @@
 > labradoodle: delightful, mostly harmless, occasionally eats your slippers.
 > Review before you trust it with your grandmother's kjøttkaker. 🍖
 
-Converts Norwegian recipe units to **grams**. That's it. That's the whole idea.
+Converts recipe units to **grams** — Norwegian (`ss`, `dl`, `kopp`) and imperial
+(`cups`, `oz`, `lb`). That's it. That's the whole idea.
 
 `3 ss hvetemel` ➜ `27 g` · `1,5 dl melk` ➜ `150 g` · `6 stk egg` ➜ `330 g`
 

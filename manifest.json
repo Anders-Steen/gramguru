@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "GramGuru 🧐",
   "version": "0.1.9",
-  "description": "Turns Norwegian recipe units (ss, ts, dl, kopp ...) into grams. Metric only — no imperial survivors.",
+  "description": "Turns recipe units (ss, ts, dl, kopp, cups, oz, lb ...) into grams. Metric only — no imperial survivors.",
   "homepage_url": "https://github.com/Anders-Steen/gramguru",
   "icons": {
     "16": "icons/icon-16.png",

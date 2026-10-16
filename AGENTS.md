@@ -9,8 +9,8 @@
 
 ## What this is
 
-A Firefox Manifest V3 extension that scans page text for Norwegian (and
-imperial) cooking units and annotates them with the equivalent weight in grams.
+A Firefox Manifest V3 extension that scans page text for recipe units (Norwegian
+and imperial) and annotates them with the equivalent weight in grams.
 No runtime network access; the density table is bundled.
 
 ## Golden rules

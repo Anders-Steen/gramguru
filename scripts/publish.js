@@ -28,7 +28,7 @@ const LISTING = {
   name: { "en-US": MANIFEST.name },
   summary: {
     "en-US":
-      "Converts Norwegian recipe units (ss, ts, dl, kopp) to grams. Metric only — no imperial survivors.",
+      "Converts Norwegian and imperial recipe units (ss, dl, kopp, cups, oz) to grams. Metric only.",
   },
   categories: { firefox: ["other"] },
   version: { license: "MIT" },
