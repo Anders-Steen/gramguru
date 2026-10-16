@@ -1,6 +1,6 @@
 {
   "name": "gramguru",
-  "version": "0.1.9",
+  "version": "0.1.13",
   "description": "Firefox extension that converts recipe units (ss, ts, dl, kopp, cups, oz ...) into grams. Metric only, always.",
   "private": true,
   "type": "module",
