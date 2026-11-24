@@ -54,6 +54,21 @@ test("unknown count units are ignored (avoids prose false positives)", () => {
   assert.equal(convertText("3 stk").length, 0);
   assert.equal(convertText("8.657 pakker").length, 0);
 });
+test("bare single-letter units never swallow the following word", () => {
+  // "2 lions escaped" used to become "2 l" + "ions escaped" -> "2000 g wet/dry".
+  assert.equal(convertText("2 lions escaped").length, 0);
+  assert.equal(convertText("1 lost his way").length, 0);
+  assert.equal(convertText("10 lamps were sold").length, 0);
+  assert.equal(convertText("2 liters of milk").length, 0);
+});
+test("bare single-letter units need a space and an ingredient", () => {
+  assert.equal(convertText("Messi scored 2 l.").length, 0);
+  assert.equal(convertText("The 2 l").length, 0);
+  assert.equal(first("2 l melk").metric, "2 kg");
+  assert.equal(first("2l melk").metric, "2 kg");
+  assert.equal(first("1,5 liter melk").metric, "1.5 kg");
+  assert.equal(first2("2 l ", "melk").grams, 2000);
+});
 
 test("count units with a known ingredient convert exactly", () => {
   const m = first("6 stk egg");

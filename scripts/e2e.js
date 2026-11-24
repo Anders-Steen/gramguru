@@ -25,6 +25,7 @@ const SITES = [
       { original: "2 ss", shown: "30/18 g wet/dry", unknown: true },
       { original: "8 oz smør", shown: "226.8 g", emoji: "🔪", visible: "226.8 g smør" },
     ],
+    absent: ["2 lions", "1 lost", "10 lamps"],
     minMarks: 10,
   },
   {
@@ -92,8 +93,10 @@ const SITES = [
   {
     name: "trinesmatblogg kyllinggryte",
     url: "https://trinesmatblogg.no/recipe/kremet-kyllinggryte-med-gnocchi-og-soltorkede-tomater/",
-    expect: [{ original: "1 ½ liter", shown: "1500/825 g wet/dry", unknown: true }],
-    minMarks: 4,
+    // Recipe is behind a membership paywall: only the free metric ingredients
+    // render, so nothing here should convert. (Was "1 ½ liter" before the paywall.)
+    expect: [],
+    minMarks: 0,
   },
   // International sites (US/UK units)
   {

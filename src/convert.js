@@ -20,7 +20,15 @@ defineUnits(["teskje", "teskjeer", "tsk", "ts"], { key: "teaspoon", kind: "volum
 defineUnits(["desiliter", "desilitre", "dl"], { key: "deciliter", kind: "volume", generic: 100 });
 defineUnits(["centiliter", "cl"], { key: "centiliter", kind: "volume", generic: 10 });
 defineUnits(["milliliter", "ml"], { key: "milliliter", kind: "volume", generic: 1 });
-defineUnits(["liter", "litre", "l"], { key: "liter", kind: "volume", generic: 1000 });
+// Bare "l" is a trap: "2 lions escaped" -> "2 l" + "ions". A single-letter
+// alias only counts when it is not glued to the next word ("2l melk" is fine,
+// "2 liters" also fine) — see SINGLE_LETTER_TAIL in convertText().
+defineUnits(["liter", "litre", "l"], {
+  key: "liter",
+  kind: "volume",
+  generic: 1000,
+  singleLetter: true,
+});
 defineUnits(["kopper", "kopp", "krus"], { key: "cup", kind: "volume", generic: 250 });
 defineUnits(["glass"], { key: "deciliter", kind: "volume", mul: 2, generic: 200 });
 defineUnits(["skiver", "skive"], { key: "piece", kind: "count", generic: 30 });
@@ -346,6 +354,8 @@ const MATCH_RE = new RegExp(
   "giu",
 );
 const INGREDIENT_RE = /^[\s]+([\p{L}][\p{L}\p{N}-]*(?:\s+[\p{L}][\p{L}\p{N}-]*){0,3})/u;
+// The letters glued to a single-letter unit ("2 l|iters", "2 l|ions").
+const SINGLE_LETTER_TAIL = /^[\p{L}]/u;
 // `fallbackIngredient` is the text of an adjacent cell on the same row (some
 // sites put the amount and the ingredient in separate elements).
 // A line that already states a mass (g/kg) is already metric — don't touch it.
@@ -361,6 +371,23 @@ export function convertText(text, fallbackIngredient = "") {
     const alias = m[2].toLowerCase();
     const def = UNITS[alias];
     if (!def) continue;
+    if (def.singleLetter) {
+      // "2l melk" is a unit; "2 lions" / "2 liters" is a word.
+      if (SINGLE_LETTER_TAIL.test(text.slice(m.index + m[0].length))) {
+        MATCH_RE.lastIndex = m.index + m[0].length;
+        continue;
+      }
+      // Even on its own, a single bare letter only means liters next to a real
+      // ingredient ("2 l melk"). In prose ("that's 2 l.") it is too ambiguous,
+      // so require an ingredient phrase.
+      if (!INGREDIENT_RE.test(text.slice(m.index + m[0].length))) {
+        const hint = lookupIngredient(fallbackIngredient);
+        if (!hint || hint.units[def.key] === undefined) {
+          MATCH_RE.lastIndex = m.index + m[0].length;
+          continue;
+        }
+      }
+    }
     if (alreadyMetric) {
       // e.g. "150g/5oz", "1 cup (200 g)" — the weight is already there.
       MATCH_RE.lastIndex = m.index + m[0].length;
